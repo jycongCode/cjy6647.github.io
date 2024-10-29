@@ -1,0 +1,307 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Motion Diffusion(一) | jicong&#39;s blog</title>
+    <meta name="author" content="jicong" />
+    <meta name="description" content="" />
+    <meta name="keywords" content="" />
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"
+    />
+    <link rel="icon" href="/images/avatar.jpg" />
+    <link rel="preconnect" href="https://s4.zstatic.net" />
+<script src="https://s4.zstatic.net/ajax/libs/vue/3.3.7/vue.global.prod.min.js"></script>
+<link rel="stylesheet" href="https://s4.zstatic.net/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+<link rel="preconnect" href="https://fonts.googleapis.cn" />
+<link rel="preconnect" href="https://fonts.gstatic.cn" crossorigin />
+<link
+    rel="stylesheet"
+    href="https://fonts.googleapis.cn/css2?family=Fira+Code:wght@400;500;600;700&family=Lexend:wght@400;500;600;700;800;900&family=Noto+Sans+SC:wght@400;500;600;700;800;900&display=swap"
+/>
+<script> const mixins = {}; </script>
+
+<script src="https://polyfill.alicdn.com/v3/polyfill.min.js?features=default"></script>
+
+
+<script src="https://s4.zstatic.net/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://s4.zstatic.net/ajax/libs/highlightjs-line-numbers.js/2.8.0/highlightjs-line-numbers.min.js"></script>
+<link
+    rel="stylesheet"
+    href="https://s4.zstatic.net/ajax/libs/highlight.js/11.9.0/styles/github.min.css"
+/>
+<script src="/js/lib/highlight.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/css/main.css" />
+
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><meta name="generator" content="Hexo 7.3.0"></head>
+<body>
+    <div id="layout">
+        <transition name="fade">
+            <div id="loading" v-show="loading">
+                <div id="loading-circle">
+                    <h2>LOADING</h2>
+                    <p>加载过慢请开启缓存 浏览器默认开启</p>
+                    <img src="/images/loading.gif" />
+                </div>
+            </div>
+        </transition>
+        <div id="menu" :class="{ hidden: hiddenMenu, 'menu-color': menuColor}">
+    <nav id="desktop-menu">
+        <a class="title" href="/">
+            <span>JICONG&#39;S BLOG</span>
+        </a>
+        
+        <a href="/">
+            <i class="fa-solid fa-house fa-fw"></i>
+            <span>&ensp;Home</span>
+        </a>
+        
+        <a href="/about">
+            <i class="fa-solid fa-id-card fa-fw"></i>
+            <span>&ensp;About</span>
+        </a>
+        
+        <a href="/archives">
+            <i class="fa-solid fa-box-archive fa-fw"></i>
+            <span>&ensp;Archives</span>
+        </a>
+        
+        <a href="/categories">
+            <i class="fa-solid fa-bookmark fa-fw"></i>
+            <span>&ensp;Categories</span>
+        </a>
+        
+        <a href="/tags">
+            <i class="fa-solid fa-tags fa-fw"></i>
+            <span>&ensp;Tags</span>
+        </a>
+        
+    </nav>
+    <nav id="mobile-menu">
+        <div class="title" @click="showMenuItems = !showMenuItems">
+            <i class="fa-solid fa-bars fa-fw"></i>
+            <span>&emsp;JICONG&#39;S BLOG</span>
+        </div>
+        <transition name="slide">
+            <div class="items" v-show="showMenuItems">
+                
+                <a href="/">
+                    <div class="item">
+                        <div style="min-width: 20px; max-width: 50px; width: 10%">
+                            <i class="fa-solid fa-house fa-fw"></i>
+                        </div>
+                        <div style="min-width: 100px; max-width: 150%; width: 20%">Home</div>
+                    </div>
+                </a>
+                
+                <a href="/about">
+                    <div class="item">
+                        <div style="min-width: 20px; max-width: 50px; width: 10%">
+                            <i class="fa-solid fa-id-card fa-fw"></i>
+                        </div>
+                        <div style="min-width: 100px; max-width: 150%; width: 20%">About</div>
+                    </div>
+                </a>
+                
+                <a href="/archives">
+                    <div class="item">
+                        <div style="min-width: 20px; max-width: 50px; width: 10%">
+                            <i class="fa-solid fa-box-archive fa-fw"></i>
+                        </div>
+                        <div style="min-width: 100px; max-width: 150%; width: 20%">Archives</div>
+                    </div>
+                </a>
+                
+                <a href="/categories">
+                    <div class="item">
+                        <div style="min-width: 20px; max-width: 50px; width: 10%">
+                            <i class="fa-solid fa-bookmark fa-fw"></i>
+                        </div>
+                        <div style="min-width: 100px; max-width: 150%; width: 20%">Categories</div>
+                    </div>
+                </a>
+                
+                <a href="/tags">
+                    <div class="item">
+                        <div style="min-width: 20px; max-width: 50px; width: 10%">
+                            <i class="fa-solid fa-tags fa-fw"></i>
+                        </div>
+                        <div style="min-width: 100px; max-width: 150%; width: 20%">Tags</div>
+                    </div>
+                </a>
+                
+            </div>
+        </transition>
+    </nav>
+</div>
+<transition name="fade">
+    <div id="menu-curtain" @click="showMenuItems = !showMenuItems" v-show="showMenuItems"></div>
+</transition>
+
+        <div id="main" :class="loading ? 'into-enter-from': 'into-enter-active'">
+            <div class="article">
+    <div>
+        <h1>Motion Diffusion(一)</h1>
+    </div>
+    <div class="info">
+        <span class="date">
+            <span class="icon">
+                <i class="fa-solid fa-calendar fa-fw"></i>
+            </span>
+            2024/10/28
+        </span>
+        
+        
+        <span class="tags">
+            <span class="icon">
+                <i class="fa-solid fa-tags fa-fw"></i>
+            </span>
+            
+            
+            <span class="tag">
+                
+                <a href="/tags/Animation/" style="color: #ffa2c4">
+                    Animation
+                </a>
+            </span>
+            
+            <span class="tag">
+                
+                <a href="/tags/AI/" style="color: #00bcd4">
+                    AI
+                </a>
+            </span>
+            
+        </span>
+        
+    </div>
+    
+    <div class="content" v-pre>
+        <script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']]
+  }
+};
+</script>
+
+<script id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+
+<p>鉴于Diffusion model在图形图像生成方面获得的巨大成功，将其应用在动作生成方面的选择并不会令人感到惊讶。网络上对于这方面的讨论似乎并不多(虽然关于Motion方向本身的讨论感觉就不是很多), 而我最近也在参与一个相关方向的项目，所以在这里概括性的介绍一下现阶段Motion Diffusion相关的研究以及尚且存在的问题。</p>
+<h2 id="Human-Motion-Diffusion-Model-MDM"><a href="#Human-Motion-Diffusion-Model-MDM" class="headerlink" title="Human Motion Diffusion Model(MDM)"></a>Human Motion Diffusion Model(MDM)</h2><p>这篇论文是最早直接使用Diffusion Model进行Human Motion生成的工作之一，也是ICLR203的top25%文章，之后的绝大部分工作也是建立在该文章的框架上进行的。其通过对原始transformer-based Diffusion Model进行针对Motion的相应调整，来完成text-to-motion，action-to-motion以及edit motion等任务。</p>
+<p><strong>MDM overview</strong></p>
+<img src="MDM-overview.png" title="" alt="" data-align="center">
+
+<ul>
+<li><p>模型整体采用transformer-based架构，而非传统的Unet框架(之后的工作大部分换回了Unet)，通过CLIP提取text输入的特征，MLP编码时间t，这一部分和传统的Diffusion并没有本质上的区别</p>
+</li>
+<li><p>为了能够应用geometric loss, MDM并不预测加噪过程中的噪声，而是直接预测还原的结果，从而能够在训练过程中施加geometric loss，比如foot skating loss，velocity loss等，来提升生成内容质量。这也是动作生成和图像的一个不同点，动作的关节空间存在严格的链式依赖关系，并且动作生成对精度要求高，噪声敏感, 对某个关节的轻微扰动很容易导致整体的动作变形，产生如滑步，抖动之类的问题，因此需要施加额外的约束。针对动作生成质量的讨论可以参考Daniel Holden大佬的一篇<a target="_blank" rel="noopener" href="https://theorangeduck.com/page/animation-quality">blog</a></p>
+</li>
+<li><p>类似于Diffusion在图像上的inpainting操作，MDM同样可以通过在时域上进行补齐进行Motion-in-between。并且可以通过替换每次迭代过程中$\hat{x}_0$中对应的关节部分来实现对特定部分骨骼的编辑</p>
+</li>
+<li><p>在HumanML3d以及KIT上进行实验，证明MDM相比之前的动作生成算法有显著的效果提升。</p>
+</li>
+</ul>
+<img src="MDM-exp.png" title="" alt="" data-align="center">
+
+<p>从实验结果可以看出，相比之前的方法，MDM无论是在生成动作的质量还是表达的多样性上都有了显著的提升，证明了Diffusion Model在动作生成上的优越性，并且证明能够完成text2-motion，action2motion等任务，但同时该方法也存在训练以及推理耗时长，模型难以扩展等问题。</p>
+<h2 id="Executing-your-Commands-via-Motion-Diffusion-in-Latent-Space-MLD"><a href="#Executing-your-Commands-via-Motion-Diffusion-in-Latent-Space-MLD" class="headerlink" title="Executing your Commands via Motion Diffusion in Latent Space(MLD)"></a>Executing your Commands via Motion Diffusion in Latent Space(MLD)</h2><p>MLD针对MDM等是直接使用原始动捕数据的Diffusion模型上进行了改进，即在大量无标签的动捕数据上训练一个autoencoder，将原始动捕数据映射到latent空间，然后利用Diffusion model在latent空间上去拟合数据的分布，从而降低原始动捕数据中噪声影响以及对原始数据进行降维，提高学习效率与推理速度。</p>
+<img title="" src="MLD-overview.png" alt="" width="482" data-align="center">
+
+<ul>
+<li><p>Motion-Encoder和Motion-Decoder是与训练的VAE网络，采用类似Unet的long-skip连接，每个模块采用transformer-based结构设计，预先在大量无标签动捕数据上进行训练，获得具有高表达能力的动作编码器，映射到latent空间</p>
+</li>
+<li><p>Diffusion模型采用transformer-based结构，基本就是在Motion-Encoder的SkipTransformerEncoderLayer的基础上在前面加上另一个TransformerEncoderLayer和一个LayerNorm。特殊的地方在于MLD通过在0维度上将sample数据和text的embedding数据做concate，从而实现条件的输入。文章中提出结合text_embedding的方式有直接concate与cross-attention两种方式，并通过ablation实验结果证明concate的效果更好</p>
+<img title="" src="MLD-ablation.png" alt="" width="472" data-align="center">
+</li>
+<li><p>MLD通过在latent空间上压缩数据从而降低Diffusion模型需要学习的参数量，提高整体的训练与推理效率。</p>
+</li>
+<li><p>MLD的模式能够更好的利用无标签的数据，获得更好的motion feature encoding。个人认为这是MLD非常重要的一个性质，因为本身有标签的motion数据量相比image要少得多，并且不同的数据集之间分布差距也很明显，容易使得Diffusion Model在单个数据集上”过拟合”。这种更好利用unlabel data的方法也为之后在zero-shot上进行尝试的研究提供很好的借鉴。</p>
+</li>
+</ul>
+<h2 id="StableMoFusion-Towards-Robust-and-Efficient-Diffusion-based-Motion"><a href="#StableMoFusion-Towards-Robust-and-Efficient-Diffusion-based-Motion" class="headerlink" title="StableMoFusion: Towards Robust and Efficient Diffusion-based Motion"></a>StableMoFusion: Towards Robust and Efficient Diffusion-based Motion</h2><p>前面两篇工作都使用了transformer-based的架构来实现各自的模型，无论是VAE还是Denoiser，而2024年的这篇工作则意外的没有使用transformer，而是使用了更为简单的Cross Attention进行模型架构的设计，并在Metrics层面获得了更好的效果</p>
+<img title="" src="stableMoFusion.png" alt="" width="472" data-align="center">
+
+<p>整体的训练思路仍然是传统的Diffusion模式，但是Unet结构明显发生了变化，相比于MLD使用的transformer作为encoder，这里使用了1维卷积，保留较为完整的时序。同时在对于text和sample进行结合的选择上则使用了cross attention来实现。这种结构上的变化获得了惊人的效果<br>stablemofusion-exp.png<br><img title="" src="stablemofusion-exp.png" alt="" width="472" data-align="center"></p>
+<p>该文章中还是用了非常多的trick，比如：</p>
+<ul>
+<li><p><strong>GroupNorm Tweak</strong> ：在group normalization之前和之后交换数据的维度，来最小化动作补齐对前向推理的影响</p>
+</li>
+<li><p><strong>Exponential Moving Average</strong>：计算一段模型参数的加权平均，使最近的数据更新拥有更高的权重，提高模型训练的稳定性</p>
+</li>
+<li><p><strong>Efficient Sampler</strong>：使用SDE DPM-Solver++ 2M减少去噪过程的迭代次数，减低累计误差</p>
+</li>
+<li><p><strong>Embedded-text Cache</strong>：提前计算text embedding，减少同样text在训练过程中的重复计算</p>
+</li>
+<li><p><strong>Footskate Reduction</strong>：设计footskate loss来减少滑步</p>
+</li>
+</ul>
+<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><ul>
+<li><p><a target="_blank" rel="noopener" href="https://arxiv.org/abs/2209.14916">[2209.14916] Human Motion Diffusion Model</a></p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://arxiv.org/abs/2212.04048">[2212.04048] Executing your Commands via Motion Diffusion in Latent Space</a></p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://arxiv.org/abs/2405.05691">[2405.05691] StableMoFusion: Towards Robust and Efficient Diffusion-based Motion Generation Framework</a></p>
+</li>
+</ul>
+
+    </div>
+    
+    
+    
+    
+    
+    
+    
+</div>
+
+            <footer id="footer">
+    <div id="footer-wrap">
+        <div>
+            &copy;
+            2024 - 2024 jicong&#39;s blog
+            <span id="footer-icon">
+                <i class="fa-solid fa-font-awesome fa-fw"></i>
+            </span>
+            &commat;jicong
+        </div>
+        <div>
+            Based on the <a target="_blank" rel="noopener" href="https://hexo.io">Hexo Engine</a> &amp;
+            <a target="_blank" rel="noopener" href="https://github.com/theme-particlex/hexo-theme-particlex">ParticleX Theme</a>
+        </div>
+        
+    </div>
+</footer>
+
+        </div>
+        
+    </div>
+    <script src="/js/main.js"></script>
+    
+    
+
+
+
+
+    
+</body>
+</html>
