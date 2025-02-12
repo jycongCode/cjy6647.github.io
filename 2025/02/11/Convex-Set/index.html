@@ -177,7 +177,7 @@
             
             <span class="tag">
                 
-                <a href="/tags/Convex-Optimization/" style="color: #00bcd4">
+                <a href="/tags/Convex-Optimization/" style="color: #03a9f4">
                     Convex Optimization
                 </a>
             </span>
@@ -187,8 +187,20 @@
     </div>
     
     <div class="content" v-pre>
-        <h5 id="Affine-Sets"><a href="#Affine-Sets" class="headerlink" title="Affine Sets"></a>Affine Sets</h5><ul>
-<li><p>A set $C \subseteq \mathbf{R}^nC⊆RnC \subseteq \mathbf{R}^nC⊆Rn$ is affine if the line through any two distinct points in $CCCC$ lies in $CCCC$</p>
+        <script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']]
+  }
+};
+</script>
+
+<script id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+
+<h5 id="Affine-Sets"><a href="#Affine-Sets" class="headerlink" title="Affine Sets"></a>Affine Sets</h5><ul>
+<li><p>A set $C \subseteq \mathbf{R}^nC⊆RnC \subseteq \mathbf{R}^nC⊆Rn$ is affine if the line through any two distinct points in $C$ lies in $C$</p>
 </li>
 <li><p>If for any $x_1,x_2 \in C$ and $\theta \in \mathbf{R}$ ,we have $\theta x_1+(1- \theta )x_2 \in C$</p>
 </li>
@@ -242,7 +254,7 @@
 </li>
 <li><p>A line segment is convex, but not affine (unless it resuces to a point).</p>
 </li>
-<li><p>A ray, which has the form ${x_0 + \theta v | \theta \geq 0$, where $v \neq 0$ is convex, but not affine. It is a convex cone if its base $x_0$ is 0.</p>
+<li><p>A ray, which has the form ${x_0 + \theta v | \theta \geq 0}$, where $v \neq 0$ is convex, but not affine. It is a convex cone if its base $x_0$ is 0.</p>
 </li>
 <li><p>Any subspace is affine, and a convex cone (hence convex).</p>
 </li>
