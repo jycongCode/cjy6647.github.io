@@ -183,291 +183,6 @@
         
 
 <div class="post">
-    <a href="/2025/02/11/Disney-BSDF/">
-        <h2 class="post-title">Disney Principled BSDF(Simplified)</h2>
-    </a>
-    <div class="category-and-date">
-        
-        <span class="date">
-            <span class="icon">
-                <i class="fa-solid fa-calendar fa-fw"></i>
-            </span>
-            2025/2/11
-        </span>
-        
-        
-    </div>
-    <div class="description">
-        <div class="content" v-pre>
-            
-            <script>
-MathJax = {
-  tex: {
-    inlineMath: [['$', '$'], ['\\(', '\\)']]
-  }
-};
-</script>
-
-<script id="MathJax-script" async
-  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
-</script>
-<h5 id="Overview"><a href="#Overview" class="headerlink" title="Overview"></a>Overview</h5><p>Disney Principled BSDF(以下简称DPB)尝试<strong>使用一种解决方案来囊括大多数常见的材质</strong>，类似于Blender中的Principled BSDF节点那样，通过调整一些参数就能实现金属，塑料，布料，玻璃等多种常见材质效果。DPB的实现基于对物理规则的模拟以及观测数据的拟合，但DBP的主要目的并非追求物理上的正确性，而是<strong>提供一种适合艺术家创作的工作模式，即艺术家能够直观的理解各个参数对于最终效果的影响，并且能够通过调整这些参数实现他们想要的效果</strong>。自从2012年推出后，DBP已经被广泛应用于商用以及非商用渲染引擎(当然各自的实现有所区别，重要的是这种渲染引擎和艺术创作者交互的思路)，如Blender Principled BSDF, Autodesk Standard Surface, Unreal Engine 4 Physically-based material等。</p>
-<p>以下介绍部分为简化版本，不包括full volumetric absorbption&#x2F;scattering model, sheen transmissive lobe以及thin BSDF model.</p>
-<h5 id="Diffuse"><a href="#Diffuse" class="headerlink" title="Diffuse"></a>Diffuse</h5><p>通过观察真实物体的测定数据(MERL measured BSDF)，Burley发现在<strong>grazing retroreflection(入射角和反射角构成的平面与法向量几乎垂直，观察视角和光线视角接近)时，光滑物体的反射会显著下降，而粗糙物体则在该角度的反射达到峰值</strong>。Reflectance可以通过Fresnel equation来计算，因此Burley等人根据这种观测结果设计了如下版本的<strong>Schlick Fresnel approximation</strong>：</p>
-<p>$$<br>f_{baseDiffuse} &#x3D; \frac{baseColor}{\pi}F_D(\omega_{in})F_D(\omega_{out})|n\cdot \omega_{out}|<br>$$</p>
-<p>$$<br>F_D(\omega) &#x3D; (1+(F_{D90}-1)(1-|n\cdot \omega|)^5)<br>$$</p>
-<p>$$<br>F_{D90} &#x3D; \frac{1}{2}+2\cdot roughness \cdot |h \cdot \omega_{out}|^2<br>$$</p>
-<p>在roughness接近0时，在grazing angle$$|n\cdot \omega_{in}|$以及$|n\cdot \omega_{out}|$接近0时，$F_D$接近0.5，从而实现光滑物体在grazing angle的低反射，而对于roughness接近1，并且$|h \cdot \omega_{out}|$接近1(grazing retroreflection)时，$F_D$接近2.5，从而获得峰值效果。</p>
-<p>除了基础的diffuse model，diffuse component中还包含subsurface scattering相关的内容，即对于类似皮肤，牛奶，鹅卵石这类物体，<strong>有一部分光线会在内部散射之后重新反射出表面</strong>，在2015版本中使用DBP使用volumetric path tracing来模拟这种现象，而在2012版本中则是使用了一个补偿项来代替，即<strong>修改Lommel-Seeliger law的一个近似项</strong>。</p>
-<p>$$<br>f_{subsurface}&#x3D; \frac{1.25baseColor}{\pi}(F_{SS}(\omega_{in})F_{SS}(\omega_{out})(\frac{1}{|n\cdot \omega_{in}|+|n\cdot \omega_{out}|}+0.5))|n\cdot \omega_{out}<br>$$</p>
-<p>$$<br>F_{SS}(\omega)&#x3D;(1+(F_{SS90}-1)(1-|n\cot \omega|)^5)<br>$$</p>
-<p>$$<br>F_{SS90} &#x3D; roughness \cdot |h \cdot \omega_{out}|^2<br>$$</p>
-<p>具体来说，$\frac{1}{|n\cdot \omega_{in}|+|n\cdot \omega_{out}|}$模拟subsurface散射中被吸收的部分能量</p>
-<p>最后将diffuse与subsurface部分结合我们获得完整的diffuse component BRDF</p>
-<p>$$<br>f_{diffuse} &#x3D; (1-subsurface)\cdot f_{baseDiffuse}+subsurface \cdot f_{subsurface}<br>$$</p>
-<p>这里使用的物理模型是在漫反射介质上附着绝缘体层，而绝缘体层的高光反射会在整合各个部分的时候加入。</p>
-<p>对于diffuse lobe的采样，这里采用基础的cosine-weighted hemisphere sampling。</p>
-<img title="" src="diffuse.png" alt="" width="472" data-align="center">
-
-<h5 id="Metal"><a href="#Metal" class="headerlink" title="Metal"></a>Metal</h5><p>对于高光反射，Burley则使用标准的<strong>Cook-Torrance微表面BRDF</strong></p>
-<p>$$<br>f_{metal}&#x3D;\frac{F_mD_mG_m}{4|n\cdot \omega_{in}|}<br>$$</p>
-<p>对于$F_m$, Burley使用<strong>Schlick approximation</strong></p>
-<p>$$<br>F_m &#x3D; baseColor + (1-baseColor)(1-|h\cdot \omega_{out}|)^5<br>$$</p>
-<blockquote>
-<p>注意，最后这一项使用的$|h\cdot w_{out}|$ 而非$|n\cdot \omega_{out}|$。</p>
-</blockquote>
-<p>之所以使用Schlick approximation而非原本的Fresnel equation的原因主要有两点</p>
-<ul>
-<li><p>计算上有更好的性能</p>
-</li>
-<li><p>对于金属\导体，Fresnel equation要求我们设置对应不同波长的complex IOR，而这一概念对于艺术创作者来说并不直观</p>
-</li>
-</ul>
-<p>对于$D_m$，Burley使用anisitropic Trowbridge-Reitz distribution, 即GGX</p>
-<p>$$<br>D_m &#x3D; \frac{1}{\pi \alpha_x \alpha_y (\frac{h^l_x^2}{\alpha^2_x}+\frac{h^l_y^2}{\alpha^2_y}+h^l_z^2)^2}<br>$$</p>
-<p>其中$h^l$是投射在local shading frame(以normal为z轴构建的局部坐标系)的half vector。Trowbridge-Reitz distribution能够很好的拟合MERL数据集中的数据，因为其相对于Gaussian分布等有更好的heavy tail特性。</p>
-<p>$\alpha_x$,$\alpha_y$参数建模材质表面的光滑程度，可以想象一个椭球体，加大$\alpha_x$,$\alpha_y$会使椭球在x,y方向伸展，即变得更扁平，而更小则使中心更加突出，也就更加高亮。为了使这些参数更加直观，Burley使用一种映射来将roughness参数与其关联。</p>
-<p>$$<br>aspect &#x3D; \sqrt{1-0.9anistropic}<br>$$</p>
-<p>$$<br>\alpha_x &#x3D; max(\alpha_{min},roughness^2&#x2F;aspect)<br>$$</p>
-<p>$$<br>\alpha_y &#x3D; max(\alpha_{min},roughness^2\cdot aspect)<br>$$</p>
-<p>anistropic表现各项异性，可以发现anistropic为0时asepct为1，$\alpha_x$,$\alpha_y$ 没有几乎相等，而anistropic越大，$\alpha_x$,$\alpha_y$ 差距越大。</p>
-<p>对于$G_m$, Burley使用Smith model, 其基于所有微表面朝向独立分布的假设获得一个closed form的解</p>
-<p>$$<br>G_m &#x3D; G(\omega_{in})G(\omega_{out})<br>$$</p>
-<p>$$<br>G(\omega)&#x3D;\frac{1}{1+\Lambda(\omega)}<br>$$</p>
-<p>$$<br>\Lambda(\omega) &#x3D; \frac{\sqrt{1+(\omega_l.x\cdot \alpha_x)^2+(\omega_l.y\cdot alpha_y)^2}-1}{2}<br>$$</p>
-<p>对于采样部分，我们使用visible normal sampling采样half vector，然后使用$\frac{D_mG(\omega_{in})}{4|n\cdot \omega_{in}|}$ 作为权重来进行重要性采样</p>
-<img title="" src="metal.png" alt="" width="472" data-align="center">
-
-<h5 id="Clearcoat"><a href="#Clearcoat" class="headerlink" title="Clearcoat"></a>Clearcoat</h5><p>Burley认为metal component部分使用的Trowbridge-Reitz分布的宽度仍然不够模拟Clearcoat，因此对于Clearcoat他们提出另一种achromatic specular component</p>
-<p>$$<br>f_{clearcoat} &#x3D; \frac{F_cD_cG_c}{4|n\cdot \omega_{in}|}<br>$$</p>
-<p>其中</p>
-<p>$$<br>F_c &#x3D; R_0(\eta&#x3D;1.5)+(1-R_0(\eta&#x3D;1.5))(1-|h\cdot \omega_{out})^5<br>$$</p>
-<p>$$<br>D_c &#x3D; \frac{\alpha^2_g-1}{\pi log(\alpha^2_g)(1+(\alpha^2_g-1)(h^l_z)^2)}<br>$$</p>
-<p>$$<br>G_c &#x3D; G_c(\omega_{in})G_c(\omega_{out})<br>$$</p>
-<p>$$<br>G_c(\omega)&#x3D;\frac{1}{1+\Lambda_c(\omega)}<br>$$</p>
-<p>$$<br>\Lambda_c(\omega)&#x3D;\frac{\sqrt{1+\frac{(\omega_l.x\cdot 0.25)^2+(\omega_l.y\cdot 0.25)^2}{\omega_l.z^2}}-1}{2}<br>$$</p>
-<p>$$<br>R_0(\eta)&#x3D;\frac{(\eta-1)^2}{(\eta+1)^2}<br>$$</p>
-<p>其中Schlick Fresnel $F_c$ 有固定的IOR $\eta&#x3D;1.5$, $D_c$ , $G_c$使用固定roughness为0.25。</p>
-<p>$$<br>\alpha_g &#x3D; (1-clearcoatGloss)\cdot 0.1+clearcoatGloss\cdot 0.001<br>$$</p>
-<p>$\alpha_g$表示某种各项同性的粗糙度，因为clearcoat主要表现一种高光，为了更符合艺术创作者的直觉，DPB使用clearcoatGloss参数来表示高光，并使用上述表达式映射到$\alpha_g$</p>
-<p>在进行采样时，重要性采样的权重为$\frac{D_c|n\cdot h|}{4|h\cdot \omega_{out}|}$, 采样local half vector的方法为</p>
-<p>$$<br>cos(h_{elevation}) &#x3D; \sqrt{\frac{1-(\alpha^2)^{1-u_0}}{1-\alpha^2}}<br>$$</p>
-<p>$$<br>h_{azimuth}&#x3D;2\pi u_1<br>$$</p>
-<p>$$<br>h^l_x &#x3D; sin(h_{elevation})cos(h_{azimuth})<br>$$</p>
-<p>$$<br>h^l_y &#x3D; sin(h_{elevation})sin(h_{azimuth})<br>$$</p>
-<p>$$<br>h^l_z &#x3D; cos(h_{elevation})<br>$$</p>
-<img title="" src="clearcoat.png" alt="" width="472" data-align="center">
-
-<h5 id=""><a href="#" class="headerlink" title=""></a></h5><h5 id="Glass"><a href="#Glass" class="headerlink" title="Glass"></a>Glass</h5><p>2012版本的DPB不支持glass材质，在2015版本中，Burley增加了一个dielectric lobe来模拟reflective与transmissive</p>
-<p>$$<br>f_{glass} &#x3D; {^{\frac{baseColorF_gD_gG_g}{4|n\cdot \omega_{in}}\space if\space (n_g\cdot \omega_{in})(n_g\cdot \omega_{out})&gt;0}<em>{\frac{\sqrt{baseColor}(1-F_g)D_gG_g|h\cdot \omega</em>{out}h\cdot \omega_{in}|}{|n\cdot \omega_{in}|(h\cdot \omega_{in}+\eta h\cdot \omega_{out})^2} \space otherwise}<br>$$</p>
-<blockquote>
-<p>这里使用$\sqrt{baseColor}$ 的原因是模拟玻璃存在一定厚度导致的能量损失</p>
-</blockquote>
-<p>对于$F_g$, Burley发现在$\eta \approx 1$ 时使用Schlick approximation来代替原本的Fresnel equation误差较大，所以对于这种dielectric material使用原本的Fresnel equation来实现，而不同于导体，dielectric材质的Fresnel equation没有complex IOR，并且更加的直观</p>
-<p>$$<br>F_g &#x3D; \frac{1}{2}(R^2_s+R^2_p)<br>$$</p>
-<p>$$<br>R_s &#x3D; \frac{h\cdot \omega_{in}-\eta h\cdot \omega_{out}}{h\cdot \omega_{in}+\eta h\cdot \omega_{out}}<br>$$</p>
-<p>$$<br>R_p &#x3D; \frac{\eta h\cdot \omega_{in}-h\cdot \omega_{out}}{\eta h\cdot \omega_{in}+ h\cdot \omega_{out}}<br>$$</p>
-<blockquote>
-<p>基于microfacet的假设，我们使用half vector$h$ 而非 $n$</p>
-</blockquote>
-<p>对于$G_g$以及$D_g$则和metal部分相同</p>
-<p>对于采样部分，我们仍然使用VNDF来采用half vector,然后根据$F_g$来按概率决定refractive还是reflective</p>
-<img title="" src="glass.png" alt="" width="472" data-align="center">
-
-<h5 id="Sheen"><a href="#Sheen" class="headerlink" title="Sheen"></a>Sheen</h5><p>Sheen主要表现一种类似布料的材质，这种材质在grazing angle的时候会展现非常强的反射，为了实现这种效果，Burley在Fresnel equation上进行一种hacking(通常在grazing angle上呈现特殊效果的时候会采用这种方式)</p>
-<p>$$<br>f_{sheen} &#x3D; C_{sheen}(1-|h\cdot \omega_{out})^5|n\cdot \omega_{out}|<br>$$</p>
-<p>$$<br>C_{sheen} &#x3D; (1-sheenTint)+sheenTint\cdot C_{tint}<br>$$</p>
-<p>$$<br>C_{tint} &#x3D; baseColor&#x2F;luminance(baseColor)\space if \space luminance(baseColor)&gt;0 \space else \space 1<br>$$</p>
-<p>$C_{sheen}$ 是在base color和white color之间的一个插值，而这个插值本身是在色彩的hue和饱和度上进行的。从物理上讲，当不同波长的折射率相同时，介电材料引起的镜面反射通常是无色的，也就是反射光不会因为波长不同而产生颜色上的变化。但是Sheen用来模拟布料的强retroreflection，而这种现象来源于布料复杂的微观结构，这种结构有可能导致最终结果不完全是无色的，所以我们需要艺术家自己来决定材质的<strong>无色程度</strong></p>
-<img title="" src="sheen.png" alt="" width="472" data-align="center">
-
-<h5 id="Final-BSDF"><a href="#Final-BSDF" class="headerlink" title="Final BSDF"></a>Final BSDF</h5><p>最终，我们将这些component结合，获得完整的DPB</p>
-<p>$$<br>f_{disney} &#x3D; (1-specularTransmission)\cdot (1-metallic)\cdot f_{diffuse} \<br>(1-metallic)\cdot sheen \cdot f_{sheen} \<br>(1-specularTransmission\cdot (1-metallic))\cdot \hat{f}<em>{metal}+ \<br>0.25\cdot clearcoat\cdot f</em>{clearcoat}+\<br>(1-metallic)\cdot specularTransmission\cdot f_{glass}<br>$$</p>
-<p>我们还需要补充diffuse component里没有实现的dielectric reflection，这里我们通过修改$\hat{f}_{metal}$来实现</p>
-<p>$$<br>\hat{F}<em>m &#x3D; C_0+(1-C_0)(1-(h\cdot \omega</em>{out}))^5 \<br>C_0 &#x3D; specular\cdot R_0(\eta)(1-metallic)K_s+metallic\cdot baseColor \<br>K_s &#x3D; (1-specularTint)+specularTint\cdot C_{tint}<br>$$</p>
-<p>当光线在物体内部时，我们移除其他的component，仅保留glass部分(仍然进行反射)</p>
-<p>$$<br>f_{diffuse} &#x3D; 0 \space if \space \omega_{in}\cdot n_g \leq 0 \<br>f_{metal} &#x3D; 0 \space if \space \omega_{in}\cdot n_g \leq 0 \<br>f_{clearcoat} &#x3D; 0 \space if \space \omega_{in}\cdot n_g \leq 0 \<br>f_{sheen} &#x3D; 0 \space if \space \omega_{in}\cdot n_g \leq 0<br>$$</p>
-<p>而对于重要性采样部分，我们则如下计算我们的权重</p>
-<p>$$<br>diffuseWeight &#x3D; (1-metallic)\cdot(1-specularTransmission) \<br>metalWeight &#x3D; (1-specularTransmission\cdot(1-metallic)) \<br>glassWeight &#x3D; (1-metallic)\cdot specularTransmission \<br>clearcoatWeight &#x3D; 0.25 \cdot clearcoat<br>$$</p>
-<img title="" src="dqb.png" alt="" width="472" data-align="center">
-            
-        </div>
-    </div>
-    <div class="post-tags">
-        
-        <span class="icon">
-            <i class="fa-solid fa-tags fa-fw"></i>
-        </span>
-        
-        
-        
-        <span class="tag">
-            
-            <a href="/tags/rendering/" style="color: #ffa2c4">rendering</a>
-        </span>
-        
-    </div>
-    <a href="/2025/02/11/Disney-BSDF/" class="go-post">阅读全文</a>
-</div>
-
-<div class="post">
-    <a href="/2025/02/11/Disney-BSDF/">
-        <h2 class="post-title">Disney Principled BSDF(Simplified)</h2>
-    </a>
-    <div class="category-and-date">
-        
-        <span class="date">
-            <span class="icon">
-                <i class="fa-solid fa-calendar fa-fw"></i>
-            </span>
-            2025/2/11
-        </span>
-        
-        
-    </div>
-    <div class="description">
-        <div class="content" v-pre>
-            
-            <h5 id="Overview"><a href="#Overview" class="headerlink" title="Overview"></a>Overview</h5><p>Disney Principled BSDF(以下简称DPB)尝试<strong>使用一种解决方案来囊括大多数常见的材质</strong>，类似于Blender中的Principled BSDF节点那样，通过调整一些参数就能实现金属，塑料，布料，玻璃等多种常见材质效果。DPB的实现基于对物理规则的模拟以及观测数据的拟合，但DBP的主要目的并非追求物理上的正确性，而是<strong>提供一种适合艺术家创作的工作模式，即艺术家能够直观的理解各个参数对于最终效果的影响，并且能够通过调整这些参数实现他们想要的效果</strong>。自从2012年推出后，DBP已经被广泛应用于商用以及非商用渲染引擎(当然各自的实现有所区别，重要的是这种渲染引擎和艺术创作者交互的思路)，如Blender Principled BSDF, Autodesk Standard Surface, Unreal Engine 4 Physically-based material等。</p>
-<p>以下介绍部分为简化版本，不包括full volumetric absorbption&#x2F;scattering model, sheen transmissive lobe以及thin BSDF model.</p>
-<h5 id="Diffuse"><a href="#Diffuse" class="headerlink" title="Diffuse"></a>Diffuse</h5><p>通过观察真实物体的测定数据(MERL measured BSDF)，Burley发现在<strong>grazing retroreflection(入射角和反射角构成的平面与法向量几乎垂直，观察视角和光线视角接近)时，光滑物体的反射会显著下降，而粗糙物体则在该角度的反射达到峰值</strong>。Reflectance可以通过Fresnel equation来计算，因此Burley等人根据这种观测结果设计了如下版本的<strong>Schlick Fresnel approximation</strong>：</p>
-<p>$$<br>f_{baseDiffuse} &#x3D; \frac{baseColor}{\pi}F_D(\omega_{in})F_D(\omega_{out})|n\cdot \omega_{out}|<br>$$</p>
-<p>$$<br>F_D(\omega) &#x3D; (1+(F_{D90}-1)(1-|n\cdot \omega|)^5)<br>$$</p>
-<p>$$<br>F_{D90} &#x3D; \frac{1}{2}+2\cdot roughness \cdot |h \cdot \omega_{out}|^2<br>$$</p>
-<p>在roughness接近0时，在grazing angle$$|n\cdot \omega_{in}|$以及$|n\cdot \omega_{out}|$接近0时，$F_D$接近0.5，从而实现光滑物体在grazing angle的低反射，而对于roughness接近1，并且$|h \cdot \omega_{out}|$接近1(grazing retroreflection)时，$F_D$接近2.5，从而获得峰值效果。</p>
-<p>除了基础的diffuse model，diffuse component中还包含subsurface scattering相关的内容，即对于类似皮肤，牛奶，鹅卵石这类物体，<strong>有一部分光线会在内部散射之后重新反射出表面</strong>，在2015版本中使用DBP使用volumetric path tracing来模拟这种现象，而在2012版本中则是使用了一个补偿项来代替，即<strong>修改Lommel-Seeliger law的一个近似项</strong>。</p>
-<p>$$<br>f_{subsurface}&#x3D; \frac{1.25baseColor}{\pi}(F_{SS}(\omega_{in})F_{SS}(\omega_{out})(\frac{1}{|n\cdot \omega_{in}|+|n\cdot \omega_{out}|}+0.5))|n\cdot \omega_{out}<br>$$</p>
-<p>$$<br>F_{SS}(\omega)&#x3D;(1+(F_{SS90}-1)(1-|n\cot \omega|)^5)<br>$$</p>
-<p>$$<br>F_{SS90} &#x3D; roughness \cdot |h \cdot \omega_{out}|^2<br>$$</p>
-<p>具体来说，$\frac{1}{|n\cdot \omega_{in}|+|n\cdot \omega_{out}|}$模拟subsurface散射中被吸收的部分能量</p>
-<p>最后将diffuse与subsurface部分结合我们获得完整的diffuse component BRDF</p>
-<p>$$<br>f_{diffuse} &#x3D; (1-subsurface)\cdot f_{baseDiffuse}+subsurface \cdot f_{subsurface}<br>$$</p>
-<p>这里使用的物理模型是在漫反射介质上附着绝缘体层，而绝缘体层的高光反射会在整合各个部分的时候加入。</p>
-<p>对于diffuse lobe的采样，这里采用基础的cosine-weighted hemisphere sampling。</p>
-<img title="" src="diffuse.png" alt="" width="472" data-align="center">
-
-<h5 id="Metal"><a href="#Metal" class="headerlink" title="Metal"></a>Metal</h5><p>对于高光反射，Burley则使用标准的<strong>Cook-Torrance微表面BRDF</strong></p>
-<p>$$<br>f_{metal}&#x3D;\frac{F_mD_mG_m}{4|n\cdot \omega_{in}|}<br>$$</p>
-<p>对于$F_m$, Burley使用<strong>Schlick approximation</strong></p>
-<p>$$<br>F_m &#x3D; baseColor + (1-baseColor)(1-|h\cdot \omega_{out}|)^5<br>$$</p>
-<blockquote>
-<p>注意，最后这一项使用的$|h\cdot w_{out}|$ 而非$|n\cdot \omega_{out}|$。</p>
-</blockquote>
-<p>之所以使用Schlick approximation而非原本的Fresnel equation的原因主要有两点</p>
-<ul>
-<li><p>计算上有更好的性能</p>
-</li>
-<li><p>对于金属\导体，Fresnel equation要求我们设置对应不同波长的complex IOR，而这一概念对于艺术创作者来说并不直观</p>
-</li>
-</ul>
-<p>对于$D_m$，Burley使用anisitropic Trowbridge-Reitz distribution, 即GGX</p>
-<p>$$<br>D_m &#x3D; \frac{1}{\pi \alpha_x \alpha_y (\frac{h^l_x^2}{\alpha^2_x}+\frac{h^l_y^2}{\alpha^2_y}+h^l_z^2)^2}<br>$$</p>
-<p>其中$h^l$是投射在local shading frame(以normal为z轴构建的局部坐标系)的half vector。Trowbridge-Reitz distribution能够很好的拟合MERL数据集中的数据，因为其相对于Gaussian分布等有更好的heavy tail特性。</p>
-<p>$\alpha_x$,$\alpha_y$参数建模材质表面的光滑程度，可以想象一个椭球体，加大$\alpha_x$,$\alpha_y$会使椭球在x,y方向伸展，即变得更扁平，而更小则使中心更加突出，也就更加高亮。为了使这些参数更加直观，Burley使用一种映射来将roughness参数与其关联。</p>
-<p>$$<br>aspect &#x3D; \sqrt{1-0.9anistropic}<br>$$</p>
-<p>$$<br>\alpha_x &#x3D; max(\alpha_{min},roughness^2&#x2F;aspect)<br>$$</p>
-<p>$$<br>\alpha_y &#x3D; max(\alpha_{min},roughness^2\cdot aspect)<br>$$</p>
-<p>anistropic表现各项异性，可以发现anistropic为0时asepct为1，$\alpha_x$,$\alpha_y$ 没有几乎相等，而anistropic越大，$\alpha_x$,$\alpha_y$ 差距越大。</p>
-<p>对于$G_m$, Burley使用Smith model, 其基于所有微表面朝向独立分布的假设获得一个closed form的解</p>
-<p>$$<br>G_m &#x3D; G(\omega_{in})G(\omega_{out})<br>$$</p>
-<p>$$<br>G(\omega)&#x3D;\frac{1}{1+\Lambda(\omega)}<br>$$</p>
-<p>$$<br>\Lambda(\omega) &#x3D; \frac{\sqrt{1+(\omega_l.x\cdot \alpha_x)^2+(\omega_l.y\cdot alpha_y)^2}-1}{2}<br>$$</p>
-<p>对于采样部分，我们使用visible normal sampling采样half vector，然后使用$\frac{D_mG(\omega_{in})}{4|n\cdot \omega_{in}|}$ 作为权重来进行重要性采样</p>
-<img title="" src="metal.png" alt="" width="472" data-align="center">
-
-<h5 id="Clearcoat"><a href="#Clearcoat" class="headerlink" title="Clearcoat"></a>Clearcoat</h5><p>Burley认为metal component部分使用的Trowbridge-Reitz分布的宽度仍然不够模拟Clearcoat，因此对于Clearcoat他们提出另一种achromatic specular component</p>
-<p>$$<br>f_{clearcoat} &#x3D; \frac{F_cD_cG_c}{4|n\cdot \omega_{in}|}<br>$$</p>
-<p>其中</p>
-<p>$$<br>F_c &#x3D; R_0(\eta&#x3D;1.5)+(1-R_0(\eta&#x3D;1.5))(1-|h\cdot \omega_{out})^5<br>$$</p>
-<p>$$<br>D_c &#x3D; \frac{\alpha^2_g-1}{\pi log(\alpha^2_g)(1+(\alpha^2_g-1)(h^l_z)^2)}<br>$$</p>
-<p>$$<br>G_c &#x3D; G_c(\omega_{in})G_c(\omega_{out})<br>$$</p>
-<p>$$<br>G_c(\omega)&#x3D;\frac{1}{1+\Lambda_c(\omega)}<br>$$</p>
-<p>$$<br>\Lambda_c(\omega)&#x3D;\frac{\sqrt{1+\frac{(\omega_l.x\cdot 0.25)^2+(\omega_l.y\cdot 0.25)^2}{\omega_l.z^2}}-1}{2}<br>$$</p>
-<p>$$<br>R_0(\eta)&#x3D;\frac{(\eta-1)^2}{(\eta+1)^2}<br>$$</p>
-<p>其中Schlick Fresnel $F_c$ 有固定的IOR $\eta&#x3D;1.5$, $D_c$ , $G_c$使用固定roughness为0.25。</p>
-<p>$$<br>\alpha_g &#x3D; (1-clearcoatGloss)\cdot 0.1+clearcoatGloss\cdot 0.001<br>$$</p>
-<p>$\alpha_g$表示某种各项同性的粗糙度，因为clearcoat主要表现一种高光，为了更符合艺术创作者的直觉，DPB使用clearcoatGloss参数来表示高光，并使用上述表达式映射到$\alpha_g$</p>
-<p>在进行采样时，重要性采样的权重为$\frac{D_c|n\cdot h|}{4|h\cdot \omega_{out}|}$, 采样local half vector的方法为</p>
-<p>$$<br>cos(h_{elevation}) &#x3D; \sqrt{\frac{1-(\alpha^2)^{1-u_0}}{1-\alpha^2}}<br>$$</p>
-<p>$$<br>h_{azimuth}&#x3D;2\pi u_1<br>$$</p>
-<p>$$<br>h^l_x &#x3D; sin(h_{elevation})cos(h_{azimuth})<br>$$</p>
-<p>$$<br>h^l_y &#x3D; sin(h_{elevation})sin(h_{azimuth})<br>$$</p>
-<p>$$<br>h^l_z &#x3D; cos(h_{elevation})<br>$$</p>
-<img title="" src="clearcoat.png" alt="" width="472" data-align="center">
-
-<h5 id=""><a href="#" class="headerlink" title=""></a></h5><h5 id="Glass"><a href="#Glass" class="headerlink" title="Glass"></a>Glass</h5><p>2012版本的DPB不支持glass材质，在2015版本中，Burley增加了一个dielectric lobe来模拟reflective与transmissive</p>
-<p>$$<br>f_{glass} &#x3D; {^{\frac{baseColorF_gD_gG_g}{4|n\cdot \omega_{in}}\space if\space (n_g\cdot \omega_{in})(n_g\cdot \omega_{out})&gt;0}<em>{\frac{\sqrt{baseColor}(1-F_g)D_gG_g|h\cdot \omega</em>{out}h\cdot \omega_{in}|}{|n\cdot \omega_{in}|(h\cdot \omega_{in}+\eta h\cdot \omega_{out})^2} \space otherwise}<br>$$</p>
-<blockquote>
-<p>这里使用$\sqrt{baseColor}$ 的原因是模拟玻璃存在一定厚度导致的能量损失</p>
-</blockquote>
-<p>对于$F_g$, Burley发现在$\eta \approx 1$ 时使用Schlick approximation来代替原本的Fresnel equation误差较大，所以对于这种dielectric material使用原本的Fresnel equation来实现，而不同于导体，dielectric材质的Fresnel equation没有complex IOR，并且更加的直观</p>
-<p>$$<br>F_g &#x3D; \frac{1}{2}(R^2_s+R^2_p)<br>$$</p>
-<p>$$<br>R_s &#x3D; \frac{h\cdot \omega_{in}-\eta h\cdot \omega_{out}}{h\cdot \omega_{in}+\eta h\cdot \omega_{out}}<br>$$</p>
-<p>$$<br>R_p &#x3D; \frac{\eta h\cdot \omega_{in}-h\cdot \omega_{out}}{\eta h\cdot \omega_{in}+ h\cdot \omega_{out}}<br>$$</p>
-<blockquote>
-<p>基于microfacet的假设，我们使用half vector$h$ 而非 $n$</p>
-</blockquote>
-<p>对于$G_g$以及$D_g$则和metal部分相同</p>
-<p>对于采样部分，我们仍然使用VNDF来采用half vector,然后根据$F_g$来按概率决定refractive还是reflective</p>
-<img title="" src="glass.png" alt="" width="472" data-align="center">
-
-<h5 id="Sheen"><a href="#Sheen" class="headerlink" title="Sheen"></a>Sheen</h5><p>Sheen主要表现一种类似布料的材质，这种材质在grazing angle的时候会展现非常强的反射，为了实现这种效果，Burley在Fresnel equation上进行一种hacking(通常在grazing angle上呈现特殊效果的时候会采用这种方式)</p>
-<p>$$<br>f_{sheen} &#x3D; C_{sheen}(1-|h\cdot \omega_{out})^5|n\cdot \omega_{out}|<br>$$</p>
-<p>$$<br>C_{sheen} &#x3D; (1-sheenTint)+sheenTint\cdot C_{tint}<br>$$</p>
-<p>$$<br>C_{tint} &#x3D; baseColor&#x2F;luminance(baseColor)\space if \space luminance(baseColor)&gt;0 \space else \space 1<br>$$</p>
-<p>$C_{sheen}$ 是在base color和white color之间的一个插值，而这个插值本身是在色彩的hue和饱和度上进行的。从物理上讲，当不同波长的折射率相同时，介电材料引起的镜面反射通常是无色的，也就是反射光不会因为波长不同而产生颜色上的变化。但是Sheen用来模拟布料的强retroreflection，而这种现象来源于布料复杂的微观结构，这种结构有可能导致最终结果不完全是无色的，所以我们需要艺术家自己来决定材质的<strong>无色程度</strong></p>
-<img title="" src="sheen.png" alt="" width="472" data-align="center">
-
-<h5 id="Final-BSDF"><a href="#Final-BSDF" class="headerlink" title="Final BSDF"></a>Final BSDF</h5><p>最终，我们将这些component结合，获得完整的DPB</p>
-<p>$$<br>f_{disney} &#x3D; (1-specularTransmission)\cdot (1-metallic)\cdot f_{diffuse} \<br>(1-metallic)\cdot sheen \cdot f_{sheen} \<br>(1-specularTransmission\cdot (1-metallic))\cdot \hat{f}<em>{metal}+ \<br>0.25\cdot clearcoat\cdot f</em>{clearcoat}+\<br>(1-metallic)\cdot specularTransmission\cdot f_{glass}<br>$$</p>
-<p>我们还需要补充diffuse component里没有实现的dielectric reflection，这里我们通过修改$\hat{f}_{metal}$来实现</p>
-<p>$$<br>\hat{F}<em>m &#x3D; C_0+(1-C_0)(1-(h\cdot \omega</em>{out}))^5 \<br>C_0 &#x3D; specular\cdot R_0(\eta)(1-metallic)K_s+metallic\cdot baseColor \<br>K_s &#x3D; (1-specularTint)+specularTint\cdot C_{tint}<br>$$</p>
-<p>当光线在物体内部时，我们移除其他的component，仅保留glass部分(仍然进行反射)</p>
-<p>$$<br>f_{diffuse} &#x3D; 0 \space if \space \omega_{in}\cdot n_g \leq 0 \<br>f_{metal} &#x3D; 0 \space if \space \omega_{in}\cdot n_g \leq 0 \<br>f_{clearcoat} &#x3D; 0 \space if \space \omega_{in}\cdot n_g \leq 0 \<br>f_{sheen} &#x3D; 0 \space if \space \omega_{in}\cdot n_g \leq 0<br>$$</p>
-<p>而对于重要性采样部分，我们则如下计算我们的权重</p>
-<p>$$<br>diffuseWeight &#x3D; (1-metallic)\cdot(1-specularTransmission) \<br>metalWeight &#x3D; (1-specularTransmission\cdot(1-metallic)) \<br>glassWeight &#x3D; (1-metallic)\cdot specularTransmission \<br>clearcoatWeight &#x3D; 0.25 \cdot clearcoat<br>$$</p>
-<img title="" src="dqb.png" alt="" width="472" data-align="center">
-            
-        </div>
-    </div>
-    <div class="post-tags">
-        
-        <span class="icon">
-            <i class="fa-solid fa-tags fa-fw"></i>
-        </span>
-        
-        
-        
-        <span class="tag">
-            
-            <a href="/tags/rendering/" style="color: #00a596">rendering</a>
-        </span>
-        
-    </div>
-    <a href="/2025/02/11/Disney-BSDF/" class="go-post">阅读全文</a>
-</div>
-
-<div class="post">
     <a href="/2025/02/11/Convex-Set/">
         <h2 class="post-title">Convex Set</h2>
     </a>
@@ -633,11 +348,159 @@ MathJax = {
         
         <span class="tag">
             
-            <a href="/tags/Convex-Optimization/" style="color: #00bcd4">Convex Optimization</a>
+            <a href="/tags/Convex-Optimization/" style="color: #ffa2c4">Convex Optimization</a>
         </span>
         
     </div>
     <a href="/2025/02/11/Convex-Set/" class="go-post">阅读全文</a>
+</div>
+
+<div class="post">
+    <a href="/2025/02/11/Disney-BSDF/">
+        <h2 class="post-title">Disney Principled BSDF(Simplified)</h2>
+    </a>
+    <div class="category-and-date">
+        
+        <span class="date">
+            <span class="icon">
+                <i class="fa-solid fa-calendar fa-fw"></i>
+            </span>
+            2025/2/11
+        </span>
+        
+        
+    </div>
+    <div class="description">
+        <div class="content" v-pre>
+            
+            <script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']]
+  }
+};
+</script>
+
+<script id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<h5 id="Overview"><a href="#Overview" class="headerlink" title="Overview"></a>Overview</h5><p>Disney Principled BSDF(以下简称DPB)尝试<strong>使用一种解决方案来囊括大多数常见的材质</strong>，类似于Blender中的Principled BSDF节点那样，通过调整一些参数就能实现金属，塑料，布料，玻璃等多种常见材质效果。DPB的实现基于对物理规则的模拟以及观测数据的拟合，但DBP的主要目的并非追求物理上的正确性，而是<strong>提供一种适合艺术家创作的工作模式，即艺术家能够直观的理解各个参数对于最终效果的影响，并且能够通过调整这些参数实现他们想要的效果</strong>。自从2012年推出后，DBP已经被广泛应用于商用以及非商用渲染引擎(当然各自的实现有所区别，重要的是这种渲染引擎和艺术创作者交互的思路)，如Blender Principled BSDF, Autodesk Standard Surface, Unreal Engine 4 Physically-based material等。</p>
+<p>以下介绍部分为简化版本，不包括full volumetric absorbption&#x2F;scattering model, sheen transmissive lobe以及thin BSDF model.</p>
+<h5 id="Diffuse"><a href="#Diffuse" class="headerlink" title="Diffuse"></a>Diffuse</h5><p>通过观察真实物体的测定数据(MERL measured BSDF)，Burley发现在<strong>grazing retroreflection(入射角和反射角构成的平面与法向量几乎垂直，观察视角和光线视角接近)时，光滑物体的反射会显著下降，而粗糙物体则在该角度的反射达到峰值</strong>。Reflectance可以通过Fresnel equation来计算，因此Burley等人根据这种观测结果设计了如下版本的<strong>Schlick Fresnel approximation</strong>：</p>
+<p>$$<br>f_{baseDiffuse} &#x3D; \frac{baseColor}{\pi}F_D(\omega_{in})F_D(\omega_{out})|n\cdot \omega_{out}|<br>$$</p>
+<p>$$<br>F_D(\omega) &#x3D; (1+(F_{D90}-1)(1-|n\cdot \omega|)^5)<br>$$</p>
+<p>$$<br>F_{D90} &#x3D; \frac{1}{2}+2\cdot roughness \cdot |h \cdot \omega_{out}|^2<br>$$</p>
+<p>在roughness接近0时，在grazing angle$$|n\cdot \omega_{in}|$以及$|n\cdot \omega_{out}|$接近0时，$F_D$接近0.5，从而实现光滑物体在grazing angle的低反射，而对于roughness接近1，并且$|h \cdot \omega_{out}|$接近1(grazing retroreflection)时，$F_D$接近2.5，从而获得峰值效果。</p>
+<p>除了基础的diffuse model，diffuse component中还包含subsurface scattering相关的内容，即对于类似皮肤，牛奶，鹅卵石这类物体，<strong>有一部分光线会在内部散射之后重新反射出表面</strong>，在2015版本中使用DBP使用volumetric path tracing来模拟这种现象，而在2012版本中则是使用了一个补偿项来代替，即<strong>修改Lommel-Seeliger law的一个近似项</strong>。</p>
+<p>$$<br>f_{subsurface}&#x3D; \frac{1.25baseColor}{\pi}(F_{SS}(\omega_{in})F_{SS}(\omega_{out})(\frac{1}{|n\cdot \omega_{in}|+|n\cdot \omega_{out}|}+0.5))|n\cdot \omega_{out}<br>$$</p>
+<p>$$<br>F_{SS}(\omega)&#x3D;(1+(F_{SS90}-1)(1-|n\cot \omega|)^5)<br>$$</p>
+<p>$$<br>F_{SS90} &#x3D; roughness \cdot |h \cdot \omega_{out}|^2<br>$$</p>
+<p>具体来说，$\frac{1}{|n\cdot \omega_{in}|+|n\cdot \omega_{out}|}$模拟subsurface散射中被吸收的部分能量</p>
+<p>最后将diffuse与subsurface部分结合我们获得完整的diffuse component BRDF</p>
+<p>$$<br>f_{diffuse} &#x3D; (1-subsurface)\cdot f_{baseDiffuse}+subsurface \cdot f_{subsurface}<br>$$</p>
+<p>这里使用的物理模型是在漫反射介质上附着绝缘体层，而绝缘体层的高光反射会在整合各个部分的时候加入。</p>
+<p>对于diffuse lobe的采样，这里采用基础的cosine-weighted hemisphere sampling。</p>
+<img title="" src="diffuse.png" alt="" width="472" data-align="center">
+
+<h5 id="Metal"><a href="#Metal" class="headerlink" title="Metal"></a>Metal</h5><p>对于高光反射，Burley则使用标准的<strong>Cook-Torrance微表面BRDF</strong></p>
+<p>$$<br>f_{metal}&#x3D;\frac{F_mD_mG_m}{4|n\cdot \omega_{in}|}<br>$$</p>
+<p>对于$F_m$, Burley使用<strong>Schlick approximation</strong></p>
+<p>$$<br>F_m &#x3D; baseColor + (1-baseColor)(1-|h\cdot \omega_{out}|)^5<br>$$</p>
+<blockquote>
+<p>注意，最后这一项使用的$|h\cdot w_{out}|$ 而非$|n\cdot \omega_{out}|$。</p>
+</blockquote>
+<p>之所以使用Schlick approximation而非原本的Fresnel equation的原因主要有两点</p>
+<ul>
+<li><p>计算上有更好的性能</p>
+</li>
+<li><p>对于金属\导体，Fresnel equation要求我们设置对应不同波长的complex IOR，而这一概念对于艺术创作者来说并不直观</p>
+</li>
+</ul>
+<p>对于$D_m$，Burley使用anisitropic Trowbridge-Reitz distribution, 即GGX</p>
+<p>$$<br>D_m &#x3D; \frac{1}{\pi \alpha_x \alpha_y (\frac{h^l_x^2}{\alpha^2_x}+\frac{h^l_y^2}{\alpha^2_y}+h^l_z^2)^2}<br>$$</p>
+<p>其中$h^l$是投射在local shading frame(以normal为z轴构建的局部坐标系)的half vector。Trowbridge-Reitz distribution能够很好的拟合MERL数据集中的数据，因为其相对于Gaussian分布等有更好的heavy tail特性。</p>
+<p>$\alpha_x$,$\alpha_y$参数建模材质表面的光滑程度，可以想象一个椭球体，加大$\alpha_x$,$\alpha_y$会使椭球在x,y方向伸展，即变得更扁平，而更小则使中心更加突出，也就更加高亮。为了使这些参数更加直观，Burley使用一种映射来将roughness参数与其关联。</p>
+<p>$$<br>aspect &#x3D; \sqrt{1-0.9anistropic}<br>$$</p>
+<p>$$<br>\alpha_x &#x3D; max(\alpha_{min},roughness^2&#x2F;aspect)<br>$$</p>
+<p>$$<br>\alpha_y &#x3D; max(\alpha_{min},roughness^2\cdot aspect)<br>$$</p>
+<p>anistropic表现各项异性，可以发现anistropic为0时asepct为1，$\alpha_x$,$\alpha_y$ 没有几乎相等，而anistropic越大，$\alpha_x$,$\alpha_y$ 差距越大。</p>
+<p>对于$G_m$, Burley使用Smith model, 其基于所有微表面朝向独立分布的假设获得一个closed form的解</p>
+<p>$$<br>G_m &#x3D; G(\omega_{in})G(\omega_{out})<br>$$</p>
+<p>$$<br>G(\omega)&#x3D;\frac{1}{1+\Lambda(\omega)}<br>$$</p>
+<p>$$<br>\Lambda(\omega) &#x3D; \frac{\sqrt{1+(\omega_l.x\cdot \alpha_x)^2+(\omega_l.y\cdot alpha_y)^2}-1}{2}<br>$$</p>
+<p>对于采样部分，我们使用visible normal sampling采样half vector，然后使用$\frac{D_mG(\omega_{in})}{4|n\cdot \omega_{in}|}$ 作为权重来进行重要性采样</p>
+<img title="" src="metal.png" alt="" width="472" data-align="center">
+
+<h5 id="Clearcoat"><a href="#Clearcoat" class="headerlink" title="Clearcoat"></a>Clearcoat</h5><p>Burley认为metal component部分使用的Trowbridge-Reitz分布的宽度仍然不够模拟Clearcoat，因此对于Clearcoat他们提出另一种achromatic specular component</p>
+<p>$$<br>f_{clearcoat} &#x3D; \frac{F_cD_cG_c}{4|n\cdot \omega_{in}|}<br>$$</p>
+<p>其中</p>
+<p>$$<br>F_c &#x3D; R_0(\eta&#x3D;1.5)+(1-R_0(\eta&#x3D;1.5))(1-|h\cdot \omega_{out})^5<br>$$</p>
+<p>$$<br>D_c &#x3D; \frac{\alpha^2_g-1}{\pi log(\alpha^2_g)(1+(\alpha^2_g-1)(h^l_z)^2)}<br>$$</p>
+<p>$$<br>G_c &#x3D; G_c(\omega_{in})G_c(\omega_{out})<br>$$</p>
+<p>$$<br>G_c(\omega)&#x3D;\frac{1}{1+\Lambda_c(\omega)}<br>$$</p>
+<p>$$<br>\Lambda_c(\omega)&#x3D;\frac{\sqrt{1+\frac{(\omega_l.x\cdot 0.25)^2+(\omega_l.y\cdot 0.25)^2}{\omega_l.z^2}}-1}{2}<br>$$</p>
+<p>$$<br>R_0(\eta)&#x3D;\frac{(\eta-1)^2}{(\eta+1)^2}<br>$$</p>
+<p>其中Schlick Fresnel $F_c$ 有固定的IOR $\eta&#x3D;1.5$, $D_c$ , $G_c$使用固定roughness为0.25。</p>
+<p>$$<br>\alpha_g &#x3D; (1-clearcoatGloss)\cdot 0.1+clearcoatGloss\cdot 0.001<br>$$</p>
+<p>$\alpha_g$表示某种各项同性的粗糙度，因为clearcoat主要表现一种高光，为了更符合艺术创作者的直觉，DPB使用clearcoatGloss参数来表示高光，并使用上述表达式映射到$\alpha_g$</p>
+<p>在进行采样时，重要性采样的权重为$\frac{D_c|n\cdot h|}{4|h\cdot \omega_{out}|}$, 采样local half vector的方法为</p>
+<p>$$<br>cos(h_{elevation}) &#x3D; \sqrt{\frac{1-(\alpha^2)^{1-u_0}}{1-\alpha^2}}<br>$$</p>
+<p>$$<br>h_{azimuth}&#x3D;2\pi u_1<br>$$</p>
+<p>$$<br>h^l_x &#x3D; sin(h_{elevation})cos(h_{azimuth})<br>$$</p>
+<p>$$<br>h^l_y &#x3D; sin(h_{elevation})sin(h_{azimuth})<br>$$</p>
+<p>$$<br>h^l_z &#x3D; cos(h_{elevation})<br>$$</p>
+<img title="" src="clearcoat.png" alt="" width="472" data-align="center">
+
+<h5 id=""><a href="#" class="headerlink" title=""></a></h5><h5 id="Glass"><a href="#Glass" class="headerlink" title="Glass"></a>Glass</h5><p>2012版本的DPB不支持glass材质，在2015版本中，Burley增加了一个dielectric lobe来模拟reflective与transmissive</p>
+<p>$$<br>f_{glass} &#x3D; {^{\frac{baseColorF_gD_gG_g}{4|n\cdot \omega_{in}}\space if\space (n_g\cdot \omega_{in})(n_g\cdot \omega_{out})&gt;0}<em>{\frac{\sqrt{baseColor}(1-F_g)D_gG_g|h\cdot \omega</em>{out}h\cdot \omega_{in}|}{|n\cdot \omega_{in}|(h\cdot \omega_{in}+\eta h\cdot \omega_{out})^2} \space otherwise}<br>$$</p>
+<blockquote>
+<p>这里使用$\sqrt{baseColor}$ 的原因是模拟玻璃存在一定厚度导致的能量损失</p>
+</blockquote>
+<p>对于$F_g$, Burley发现在$\eta \approx 1$ 时使用Schlick approximation来代替原本的Fresnel equation误差较大，所以对于这种dielectric material使用原本的Fresnel equation来实现，而不同于导体，dielectric材质的Fresnel equation没有complex IOR，并且更加的直观</p>
+<p>$$<br>F_g &#x3D; \frac{1}{2}(R^2_s+R^2_p)<br>$$</p>
+<p>$$<br>R_s &#x3D; \frac{h\cdot \omega_{in}-\eta h\cdot \omega_{out}}{h\cdot \omega_{in}+\eta h\cdot \omega_{out}}<br>$$</p>
+<p>$$<br>R_p &#x3D; \frac{\eta h\cdot \omega_{in}-h\cdot \omega_{out}}{\eta h\cdot \omega_{in}+ h\cdot \omega_{out}}<br>$$</p>
+<blockquote>
+<p>基于microfacet的假设，我们使用half vector$h$ 而非 $n$</p>
+</blockquote>
+<p>对于$G_g$以及$D_g$则和metal部分相同</p>
+<p>对于采样部分，我们仍然使用VNDF来采用half vector,然后根据$F_g$来按概率决定refractive还是reflective</p>
+<img title="" src="glass.png" alt="" width="472" data-align="center">
+
+<h5 id="Sheen"><a href="#Sheen" class="headerlink" title="Sheen"></a>Sheen</h5><p>Sheen主要表现一种类似布料的材质，这种材质在grazing angle的时候会展现非常强的反射，为了实现这种效果，Burley在Fresnel equation上进行一种hacking(通常在grazing angle上呈现特殊效果的时候会采用这种方式)</p>
+<p>$$<br>f_{sheen} &#x3D; C_{sheen}(1-|h\cdot \omega_{out})^5|n\cdot \omega_{out}|<br>$$</p>
+<p>$$<br>C_{sheen} &#x3D; (1-sheenTint)+sheenTint\cdot C_{tint}<br>$$</p>
+<p>$$<br>C_{tint} &#x3D; baseColor&#x2F;luminance(baseColor)\space if \space luminance(baseColor)&gt;0 \space else \space 1<br>$$</p>
+<p>$C_{sheen}$ 是在base color和white color之间的一个插值，而这个插值本身是在色彩的hue和饱和度上进行的。从物理上讲，当不同波长的折射率相同时，介电材料引起的镜面反射通常是无色的，也就是反射光不会因为波长不同而产生颜色上的变化。但是Sheen用来模拟布料的强retroreflection，而这种现象来源于布料复杂的微观结构，这种结构有可能导致最终结果不完全是无色的，所以我们需要艺术家自己来决定材质的<strong>无色程度</strong></p>
+<img title="" src="sheen.png" alt="" width="472" data-align="center">
+
+<h5 id="Final-BSDF"><a href="#Final-BSDF" class="headerlink" title="Final BSDF"></a>Final BSDF</h5><p>最终，我们将这些component结合，获得完整的DPB</p>
+<p>$$<br>f_{disney} &#x3D; (1-specularTransmission)\cdot (1-metallic)\cdot f_{diffuse} + (1-metallic)\cdot sheen \cdot f_{sheen} + (1-specularTransmission\cdot (1-metallic))\cdot \hat{f}<em>{metal}+ 0.25\cdot clearcoat\cdot f</em>{clearcoat}+(1-metallic)\cdot specularTransmission\cdot f_{glass}<br>$$</p>
+<p>我们还需要补充diffuse component里没有实现的dielectric reflection，这里我们通过修改$\hat{f}_{metal}$来实现</p>
+<p>$$<br>\hat{F}<em>m &#x3D; C_0+(1-C_0)(1-(h\cdot \omega</em>{out}))^5<br>$$<br>$$<br>C_0 &#x3D; specular\cdot R_0(\eta)(1-metallic)K_s+metallic\cdot baseColor<br>$$<br>$$<br>K_s &#x3D; (1-specularTint)+specularTint\cdot C_{tint}<br>$$</p>
+<p>当光线在物体内部时，我们移除其他的component，仅保留glass部分(仍然进行反射)</p>
+<p>$$<br>f_{diffuse} &#x3D; 0 \space if \space \omega_{in}\cdot n_g \leq 0<br>$$<br>$$<br>f_{metal} &#x3D; 0 \space if \space \omega_{in}\cdot n_g \leq 0<br>$$<br>$$<br>f_{clearcoat} &#x3D; 0 \space if \space \omega_{in}\cdot n_g \leq 0<br>$$<br>$$<br>f_{sheen} &#x3D; 0 \space if \space \omega_{in}\cdot n_g \leq 0<br>$$</p>
+<p>而对于重要性采样部分，我们则如下计算我们的权重</p>
+<p>$$<br>diffuseWeight &#x3D; (1-metallic)\cdot(1-specularTransmission)<br>$$<br>$$<br>metalWeight &#x3D; (1-specularTransmission\cdot(1-metallic))<br>$$<br>$$<br>glassWeight &#x3D; (1-metallic)\cdot specularTransmission<br>$$<br>$$<br>clearcoatWeight &#x3D; 0.25 \cdot clearcoat<br>$$</p>
+<img title="" src="dqb.png" alt="" width="472" data-align="center">
+            
+        </div>
+    </div>
+    <div class="post-tags">
+        
+        <span class="icon">
+            <i class="fa-solid fa-tags fa-fw"></i>
+        </span>
+        
+        
+        
+        <span class="tag">
+            
+            <a href="/tags/rendering/" style="color: #ffa2c4">rendering</a>
+        </span>
+        
+    </div>
+    <a href="/2025/02/11/Disney-BSDF/" class="go-post">阅读全文</a>
 </div>
 
 <div class="post">
@@ -673,12 +536,12 @@ MathJax = {
         
         <span class="tag">
             
-            <a href="/tags/Animation/" style="color: #03a9f4">Animation</a>
+            <a href="/tags/Animation/" style="color: #ffa2c4">Animation</a>
         </span>
         
         <span class="tag">
             
-            <a href="/tags/AI/" style="color: #ffa2c4">AI</a>
+            <a href="/tags/AI/" style="color: #ff7d73">AI</a>
         </span>
         
     </div>
@@ -718,7 +581,7 @@ MathJax = {
         
         <span class="tag">
             
-            <a href="/tags/Parallel-Programming/" style="color: #03a9f4">Parallel Programming</a>
+            <a href="/tags/Parallel-Programming/" style="color: #ffa2c4">Parallel Programming</a>
         </span>
         
     </div>

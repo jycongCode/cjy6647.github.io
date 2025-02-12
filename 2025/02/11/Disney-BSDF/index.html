@@ -177,7 +177,7 @@
             
             <span class="tag">
                 
-                <a href="/tags/rendering/" style="color: #00bcd4">
+                <a href="/tags/rendering/" style="color: #03a9f4">
                     rendering
                 </a>
             </span>
@@ -187,7 +187,18 @@
     </div>
     
     <div class="content" v-pre>
-        <h5 id="Overview"><a href="#Overview" class="headerlink" title="Overview"></a>Overview</h5><p>Disney Principled BSDF(以下简称DPB)尝试<strong>使用一种解决方案来囊括大多数常见的材质</strong>，类似于Blender中的Principled BSDF节点那样，通过调整一些参数就能实现金属，塑料，布料，玻璃等多种常见材质效果。DPB的实现基于对物理规则的模拟以及观测数据的拟合，但DBP的主要目的并非追求物理上的正确性，而是<strong>提供一种适合艺术家创作的工作模式，即艺术家能够直观的理解各个参数对于最终效果的影响，并且能够通过调整这些参数实现他们想要的效果</strong>。自从2012年推出后，DBP已经被广泛应用于商用以及非商用渲染引擎(当然各自的实现有所区别，重要的是这种渲染引擎和艺术创作者交互的思路)，如Blender Principled BSDF, Autodesk Standard Surface, Unreal Engine 4 Physically-based material等。</p>
+        <script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']]
+  }
+};
+</script>
+
+<script id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<h5 id="Overview"><a href="#Overview" class="headerlink" title="Overview"></a>Overview</h5><p>Disney Principled BSDF(以下简称DPB)尝试<strong>使用一种解决方案来囊括大多数常见的材质</strong>，类似于Blender中的Principled BSDF节点那样，通过调整一些参数就能实现金属，塑料，布料，玻璃等多种常见材质效果。DPB的实现基于对物理规则的模拟以及观测数据的拟合，但DBP的主要目的并非追求物理上的正确性，而是<strong>提供一种适合艺术家创作的工作模式，即艺术家能够直观的理解各个参数对于最终效果的影响，并且能够通过调整这些参数实现他们想要的效果</strong>。自从2012年推出后，DBP已经被广泛应用于商用以及非商用渲染引擎(当然各自的实现有所区别，重要的是这种渲染引擎和艺术创作者交互的思路)，如Blender Principled BSDF, Autodesk Standard Surface, Unreal Engine 4 Physically-based material等。</p>
 <p>以下介绍部分为简化版本，不包括full volumetric absorbption&#x2F;scattering model, sheen transmissive lobe以及thin BSDF model.</p>
 <h5 id="Diffuse"><a href="#Diffuse" class="headerlink" title="Diffuse"></a>Diffuse</h5><p>通过观察真实物体的测定数据(MERL measured BSDF)，Burley发现在<strong>grazing retroreflection(入射角和反射角构成的平面与法向量几乎垂直，观察视角和光线视角接近)时，光滑物体的反射会显著下降，而粗糙物体则在该角度的反射达到峰值</strong>。Reflectance可以通过Fresnel equation来计算，因此Burley等人根据这种观测结果设计了如下版本的<strong>Schlick Fresnel approximation</strong>：</p>
 <p>$$<br>f_{baseDiffuse} &#x3D; \frac{baseColor}{\pi}F_D(\omega_{in})F_D(\omega_{out})|n\cdot \omega_{out}|<br>$$</p>
@@ -278,13 +289,13 @@
 <img title="" src="sheen.png" alt="" width="472" data-align="center">
 
 <h5 id="Final-BSDF"><a href="#Final-BSDF" class="headerlink" title="Final BSDF"></a>Final BSDF</h5><p>最终，我们将这些component结合，获得完整的DPB</p>
-<p>$$<br>f_{disney} &#x3D; (1-specularTransmission)\cdot (1-metallic)\cdot f_{diffuse} \<br>(1-metallic)\cdot sheen \cdot f_{sheen} \<br>(1-specularTransmission\cdot (1-metallic))\cdot \hat{f}<em>{metal}+ \<br>0.25\cdot clearcoat\cdot f</em>{clearcoat}+\<br>(1-metallic)\cdot specularTransmission\cdot f_{glass}<br>$$</p>
+<p>$$<br>f_{disney} &#x3D; (1-specularTransmission)\cdot (1-metallic)\cdot f_{diffuse} + (1-metallic)\cdot sheen \cdot f_{sheen} + (1-specularTransmission\cdot (1-metallic))\cdot \hat{f}<em>{metal}+ 0.25\cdot clearcoat\cdot f</em>{clearcoat}+(1-metallic)\cdot specularTransmission\cdot f_{glass}<br>$$</p>
 <p>我们还需要补充diffuse component里没有实现的dielectric reflection，这里我们通过修改$\hat{f}_{metal}$来实现</p>
-<p>$$<br>\hat{F}<em>m &#x3D; C_0+(1-C_0)(1-(h\cdot \omega</em>{out}))^5 \<br>C_0 &#x3D; specular\cdot R_0(\eta)(1-metallic)K_s+metallic\cdot baseColor \<br>K_s &#x3D; (1-specularTint)+specularTint\cdot C_{tint}<br>$$</p>
+<p>$$<br>\hat{F}<em>m &#x3D; C_0+(1-C_0)(1-(h\cdot \omega</em>{out}))^5<br>$$<br>$$<br>C_0 &#x3D; specular\cdot R_0(\eta)(1-metallic)K_s+metallic\cdot baseColor<br>$$<br>$$<br>K_s &#x3D; (1-specularTint)+specularTint\cdot C_{tint}<br>$$</p>
 <p>当光线在物体内部时，我们移除其他的component，仅保留glass部分(仍然进行反射)</p>
-<p>$$<br>f_{diffuse} &#x3D; 0 \space if \space \omega_{in}\cdot n_g \leq 0 \<br>f_{metal} &#x3D; 0 \space if \space \omega_{in}\cdot n_g \leq 0 \<br>f_{clearcoat} &#x3D; 0 \space if \space \omega_{in}\cdot n_g \leq 0 \<br>f_{sheen} &#x3D; 0 \space if \space \omega_{in}\cdot n_g \leq 0<br>$$</p>
+<p>$$<br>f_{diffuse} &#x3D; 0 \space if \space \omega_{in}\cdot n_g \leq 0<br>$$<br>$$<br>f_{metal} &#x3D; 0 \space if \space \omega_{in}\cdot n_g \leq 0<br>$$<br>$$<br>f_{clearcoat} &#x3D; 0 \space if \space \omega_{in}\cdot n_g \leq 0<br>$$<br>$$<br>f_{sheen} &#x3D; 0 \space if \space \omega_{in}\cdot n_g \leq 0<br>$$</p>
 <p>而对于重要性采样部分，我们则如下计算我们的权重</p>
-<p>$$<br>diffuseWeight &#x3D; (1-metallic)\cdot(1-specularTransmission) \<br>metalWeight &#x3D; (1-specularTransmission\cdot(1-metallic)) \<br>glassWeight &#x3D; (1-metallic)\cdot specularTransmission \<br>clearcoatWeight &#x3D; 0.25 \cdot clearcoat<br>$$</p>
+<p>$$<br>diffuseWeight &#x3D; (1-metallic)\cdot(1-specularTransmission)<br>$$<br>$$<br>metalWeight &#x3D; (1-specularTransmission\cdot(1-metallic))<br>$$<br>$$<br>glassWeight &#x3D; (1-metallic)\cdot specularTransmission<br>$$<br>$$<br>clearcoatWeight &#x3D; 0.25 \cdot clearcoat<br>$$</p>
 <img title="" src="dqb.png" alt="" width="472" data-align="center">
     </div>
     
