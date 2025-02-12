@@ -177,7 +177,7 @@
             
             <span class="tag">
                 
-                <a href="/tags/rendering/" style="color: #03a9f4">
+                <a href="/tags/rendering/" style="color: #ff7d73">
                     rendering
                 </a>
             </span>
@@ -231,7 +231,7 @@ MathJax = {
 </li>
 </ul>
 <p>对于$D_m$，Burley使用anisitropic Trowbridge-Reitz distribution, 即GGX</p>
-<p>$$<br>D_m &#x3D; \frac{1}{\pi \alpha_x \alpha_y (\frac{h^l_x^2}{\alpha^2_x}+\frac{h^l_y^2}{\alpha^2_y}+h^l_z^2)^2}<br>$$</p>
+<p>$$<br>D_m &#x3D; \frac{1}{\pi \alpha_x \alpha_y (\frac{(h^l_x)^2}{\alpha^2_x}+\frac{(h^l_y)^2}{\alpha^2_y}+(h^l_z)^2)^2}<br>$$</p>
 <p>其中$h^l$是投射在local shading frame(以normal为z轴构建的局部坐标系)的half vector。Trowbridge-Reitz distribution能够很好的拟合MERL数据集中的数据，因为其相对于Gaussian分布等有更好的heavy tail特性。</p>
 <p>$\alpha_x$,$\alpha_y$参数建模材质表面的光滑程度，可以想象一个椭球体，加大$\alpha_x$,$\alpha_y$会使椭球在x,y方向伸展，即变得更扁平，而更小则使中心更加突出，也就更加高亮。为了使这些参数更加直观，Burley使用一种映射来将roughness参数与其关联。</p>
 <p>$$<br>aspect &#x3D; \sqrt{1-0.9anistropic}<br>$$</p>
@@ -291,11 +291,19 @@ MathJax = {
 <h5 id="Final-BSDF"><a href="#Final-BSDF" class="headerlink" title="Final BSDF"></a>Final BSDF</h5><p>最终，我们将这些component结合，获得完整的DPB</p>
 <p>$$<br>f_{disney} &#x3D; (1-specularTransmission)\cdot (1-metallic)\cdot f_{diffuse} + (1-metallic)\cdot sheen \cdot f_{sheen} + (1-specularTransmission\cdot (1-metallic))\cdot \hat{f}<em>{metal}+ 0.25\cdot clearcoat\cdot f</em>{clearcoat}+(1-metallic)\cdot specularTransmission\cdot f_{glass}<br>$$</p>
 <p>我们还需要补充diffuse component里没有实现的dielectric reflection，这里我们通过修改$\hat{f}_{metal}$来实现</p>
-<p>$$<br>\hat{F}<em>m &#x3D; C_0+(1-C_0)(1-(h\cdot \omega</em>{out}))^5<br>$$<br>$$<br>C_0 &#x3D; specular\cdot R_0(\eta)(1-metallic)K_s+metallic\cdot baseColor<br>$$<br>$$<br>K_s &#x3D; (1-specularTint)+specularTint\cdot C_{tint}<br>$$</p>
+<p>$$<br>\hat{F}<em>m &#x3D; C_0+(1-C_0)(1-(h\cdot \omega</em>{out}))^5<br>$$</p>
+<p>$$<br>C_0 &#x3D; specular\cdot R_0(\eta)(1-metallic)K_s+metallic\cdot baseColor<br>$$</p>
+<p>$$<br>K_s &#x3D; (1-specularTint)+specularTint\cdot C_{tint}<br>$$</p>
 <p>当光线在物体内部时，我们移除其他的component，仅保留glass部分(仍然进行反射)</p>
-<p>$$<br>f_{diffuse} &#x3D; 0 \space if \space \omega_{in}\cdot n_g \leq 0<br>$$<br>$$<br>f_{metal} &#x3D; 0 \space if \space \omega_{in}\cdot n_g \leq 0<br>$$<br>$$<br>f_{clearcoat} &#x3D; 0 \space if \space \omega_{in}\cdot n_g \leq 0<br>$$<br>$$<br>f_{sheen} &#x3D; 0 \space if \space \omega_{in}\cdot n_g \leq 0<br>$$</p>
+<p>$$<br>f_{diffuse} &#x3D; 0 \space if \space \omega_{in}\cdot n_g \leq 0<br>$$</p>
+<p>$$<br>f_{metal} &#x3D; 0 \space if \space \omega_{in}\cdot n_g \leq 0<br>$$</p>
+<p>$$<br>f_{clearcoat} &#x3D; 0 \space if \space \omega_{in}\cdot n_g \leq 0<br>$$</p>
+<p>$$<br>f_{sheen} &#x3D; 0 \space if \space \omega_{in}\cdot n_g \leq 0<br>$$</p>
 <p>而对于重要性采样部分，我们则如下计算我们的权重</p>
-<p>$$<br>diffuseWeight &#x3D; (1-metallic)\cdot(1-specularTransmission)<br>$$<br>$$<br>metalWeight &#x3D; (1-specularTransmission\cdot(1-metallic))<br>$$<br>$$<br>glassWeight &#x3D; (1-metallic)\cdot specularTransmission<br>$$<br>$$<br>clearcoatWeight &#x3D; 0.25 \cdot clearcoat<br>$$</p>
+<p>$$<br>diffuseWeight &#x3D; (1-metallic)\cdot(1-specularTransmission)<br>$$</p>
+<p>$$<br>metalWeight &#x3D; (1-specularTransmission\cdot(1-metallic))<br>$$</p>
+<p>$$<br>glassWeight &#x3D; (1-metallic)\cdot specularTransmission<br>$$</p>
+<p>$$<br>clearcoatWeight &#x3D; 0.25 \cdot clearcoat<br>$$</p>
 <img title="" src="dqb.png" alt="" width="472" data-align="center">
     </div>
     
