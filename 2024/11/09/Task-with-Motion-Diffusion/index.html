@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <title>Hello World | jicong&#39;s blog</title>
+    <title>Motion Diffusion(二) | jicong&#39;s blog</title>
     <meta name="author" content="jicong" />
     <meta name="description" content="" />
     <meta name="keywords" content="" />
@@ -158,33 +158,94 @@
         <div id="main" :class="loading ? 'into-enter-from': 'into-enter-active'">
             <div class="article">
     <div>
-        <h1>Hello World</h1>
+        <h1>Motion Diffusion(二)</h1>
     </div>
     <div class="info">
         <span class="date">
             <span class="icon">
                 <i class="fa-solid fa-calendar fa-fw"></i>
             </span>
-            2024/10/21
+            2024/11/9
         </span>
         
+        
+        <span class="tags">
+            <span class="icon">
+                <i class="fa-solid fa-tags fa-fw"></i>
+            </span>
+            
+            
+            <span class="tag">
+                
+                <a href="/tags/Animation/" style="color: #00bcd4">
+                    Animation
+                </a>
+            </span>
+            
+            <span class="tag">
+                
+                <a href="/tags/AI/" style="color: #03a9f4">
+                    AI
+                </a>
+            </span>
+            
+        </span>
         
     </div>
     
     <div class="content" v-pre>
-        <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+        <p>上一篇文章中的模型基本主要用于text-to-motion任务，除此之外也存在很多关于Motion Diffusion在其他任务上应用的文章，本篇文章将从中选取一些工作进行相关介绍。</p>
+<h2 id="SMooDi-Stylized-Motion-Diffusion-Model"><a href="#SMooDi-Stylized-Motion-Diffusion-Model" class="headerlink" title="SMooDi: Stylized Motion Diffusion Model"></a>SMooDi: Stylized Motion Diffusion Model</h2><p>该文章并没有停留在text2motion或者style-transfer任务上，而是在此之上更进一步，通过一段style motion作为风格参照，并将这种风格应用在text所描述的动画片段上，从而能够在text2motion的基础上进行一种更加细粒度的控制。</p>
+<p>文章中描述的方法建立在预训练的MLD模型之上，继承其生成多样化motion的能力，同时通过添加额外的Style Adaptor以及Style guidance来引导MLD的生成。</p>
+<p><img src="D:\JICONG\Developer\hexo\blog\source_posts\2024-11-09-Task-with-Motion-Diffusion\SMoodi.png"></p>
+<p><strong>Style Adaptor:</strong> 文章希望通过fine-tune作为骨架的MLD模型从而获得多种风格化的motion序列，因此其选择ControlNet架构作为风格融合的方式，提取style motion序列中的风格特征，在保证不扰乱MLD生成的motion content的前提下进行风格融合。</p>
+<p><img src="D:\JICONG\Developer\hexo\blog\source_posts\2024-11-09-Task-with-Motion-Diffusion\SMoodi-sa.png"></p>
+<p>结构上基本和ControlNet一致，冻结原先MLD中的transformer encoder层，同时复制该层的参数，并在style adaptor中训练，从而继承MLD中对于motion特征提取能力，然后通过初始化为零的Linear层，防止初始化参数的梯度影响transformer encoder的更新，这样在训练过程中，style adaptor能够渐进学习风格约束以及如何将这种约束应用在MLD中。(Style Encoder和整个Style Adaptor一起训练，其结构为一个Transformer Encoder)</p>
+<p><strong>Style Guidance:</strong> 文章同时使用Classifier-free以及classifier-guidance进行风格条件的引导，保证满足多种条件约束并且不保证生成内容的真实性</p>
+<ul>
+<li><p>Classifier-free style guidance:</p>
+<p><img src="D:\JICONG\Developer\hexo\blog\source_posts\2024-11-09-Task-with-Motion-Diffusion\cfg.png"></p>
+<p>将原先单一条件的cfg扩展为多条件的cfg，并通过$\omega_c$与$\omega_s$来调控风格以及内容的比例</p>
+</li>
+<li><p>Classifier guidance:为了进一步加强模型的风格话能力，文章中同样还使用classifier guidance。其通过一个分析函数$G(\bf{z_t},t,\bf{s})$计算$\bf{\hat{x}_0}$和参考风格$s$的embedding之间的L1距离</p>
+<img title="" src="file:///D:/JICONG/Developer/hexo/blog/source/_posts/2024-11-09-Task-with-Motion-Diffusion/cg.png" alt="" data-align="center" width="284">
 
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+<img title="" src="file:///D:/JICONG/Developer/hexo/blog/source/_posts/2024-11-09-Task-with-Motion-Diffusion/cgz.png" alt="" data-align="center" width="187">
 
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+<p>其中分析函数G中的feature extractor通过单独在100STYLE数据集上训练一个分类器，并移除最后一层来获得</p>
+</li>
+</ul>
+<p>除此之外，文章中还引入cycle prior-preservation loss来提高对于风格以及内容的融合能力：</p>
+<p><img src="D:\JICONG\Developer\hexo\blog\source_posts\2024-11-09-Task-with-Motion-Diffusion\cycle.png"></p>
+<h2 id="Guided-Motion-Diffusion-for-Controllable-Human-Motion-Synthesis"><a href="#Guided-Motion-Diffusion-for-Controllable-Human-Motion-Synthesis" class="headerlink" title="Guided Motion Diffusion for Controllable Human Motion Synthesis"></a>Guided Motion Diffusion for Controllable Human Motion Synthesis</h2><p>GMD方法主要给Diffusion网络提供空间限制，从而对于text引导生成过程进行更加细粒度的控制。这个过程包括使用逐帧轨迹(dense guidance)以及关键帧约束(sparse guidance).</p>
+<p>文章提出motion diffusion model中存在忽略空间信息约束的问题，并将这现象产生的原因归结为两点：</p>
+<ul>
+<li><p>motion表示中全局旋转的稀疏性</p>
+</li>
+<li><p>稀疏的逐帧引导信号&#96;&#96;</p>
+</li>
+</ul>
+<p>为了解决相关问题，文章做出了以下贡献：</p>
+<ul>
+<li><p>(Emphasis projection)提出一种映射方法，能够调整motion表征向量中不同部分的权重，从而使全局位移和局部动作能够更好的结合</p>
+</li>
+<li><p>增密信号传递的方法从而解决稀疏引导的问题</p>
+</li>
+<li><p>GMD，结合上述两种方法实现text以及空间信息进行引导的motion生成</p>
+</li>
+</ul>
+<p><strong>Emphasis projection</strong></p>
+<p>该方法通过对于Diffusion加噪的motion进行预处理实现，该过程总定义了几个矩阵：</p>
+<ul>
+<li><p>$A &#x3D; A’B$</p>
+</li>
+<li><p>$A’\in R^{N \times N}$ 其中$\forall A_{ij} \sim N(0,1)$</p>
+</li>
+<li><p>$B$是一个对角阵，在跟关节相关位置对应的对角线位置为$c$,其余部分为$1$</p>
+</li>
+</ul>
+<p>由此，原先输入的motion representation$x$转变为$x^{proj} &#x3D; \frac{1}{N-3+3c^2}Ax$，保证方差为$1$. 由此来加强对于motion representation中轨迹对应位置的权重。文章通过实验表明这种方法比直接在loss上对于轨迹采取更高的权重更加有效</p>
+<p><strong>Imputation on the projected motion $\mathbf{x^{proj}}$</strong></p>
 
     </div>
     
