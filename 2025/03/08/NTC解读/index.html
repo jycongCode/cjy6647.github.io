@@ -1,0 +1,308 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>NTC解读 | jicong&#39;s blog</title>
+    <meta name="author" content="jicong" />
+    <meta name="description" content="" />
+    <meta name="keywords" content="" />
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"
+    />
+    <link rel="icon" href="/images/avatar.jpg" />
+    <link rel="preconnect" href="https://s4.zstatic.net" />
+<script src="https://s4.zstatic.net/ajax/libs/vue/3.3.7/vue.global.prod.min.js"></script>
+<link rel="stylesheet" href="https://s4.zstatic.net/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+<link rel="preconnect" href="https://fonts.googleapis.cn" />
+<link rel="preconnect" href="https://fonts.gstatic.cn" crossorigin />
+<link
+    rel="stylesheet"
+    href="https://fonts.googleapis.cn/css2?family=Fira+Code:wght@400;500;600;700&family=Lexend:wght@400;500;600;700;800;900&family=Noto+Sans+SC:wght@400;500;600;700;800;900&display=swap"
+/>
+<script> const mixins = {}; </script>
+
+<script src="https://polyfill.alicdn.com/v3/polyfill.min.js?features=default"></script>
+
+
+<script src="https://s4.zstatic.net/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://s4.zstatic.net/ajax/libs/highlightjs-line-numbers.js/2.8.0/highlightjs-line-numbers.min.js"></script>
+<link
+    rel="stylesheet"
+    href="https://s4.zstatic.net/ajax/libs/highlight.js/11.9.0/styles/github.min.css"
+/>
+<script src="/js/lib/highlight.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/css/main.css" />
+
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><meta name="generator" content="Hexo 7.3.0"></head>
+<body>
+    <div id="layout">
+        <transition name="fade">
+            <div id="loading" v-show="loading">
+                <div id="loading-circle">
+                    <h2>LOADING</h2>
+                    <p>加载过慢请开启缓存 浏览器默认开启</p>
+                    <img src="/images/loading.gif" />
+                </div>
+            </div>
+        </transition>
+        <div id="menu" :class="{ hidden: hiddenMenu, 'menu-color': menuColor}">
+    <nav id="desktop-menu">
+        <a class="title" href="/">
+            <span>JICONG&#39;S BLOG</span>
+        </a>
+        
+        <a href="/">
+            <i class="fa-solid fa-house fa-fw"></i>
+            <span>&ensp;Home</span>
+        </a>
+        
+        <a href="/about">
+            <i class="fa-solid fa-id-card fa-fw"></i>
+            <span>&ensp;About</span>
+        </a>
+        
+        <a href="/archives">
+            <i class="fa-solid fa-box-archive fa-fw"></i>
+            <span>&ensp;Archives</span>
+        </a>
+        
+        <a href="/categories">
+            <i class="fa-solid fa-bookmark fa-fw"></i>
+            <span>&ensp;Categories</span>
+        </a>
+        
+        <a href="/tags">
+            <i class="fa-solid fa-tags fa-fw"></i>
+            <span>&ensp;Tags</span>
+        </a>
+        
+    </nav>
+    <nav id="mobile-menu">
+        <div class="title" @click="showMenuItems = !showMenuItems">
+            <i class="fa-solid fa-bars fa-fw"></i>
+            <span>&emsp;JICONG&#39;S BLOG</span>
+        </div>
+        <transition name="slide">
+            <div class="items" v-show="showMenuItems">
+                
+                <a href="/">
+                    <div class="item">
+                        <div style="min-width: 20px; max-width: 50px; width: 10%">
+                            <i class="fa-solid fa-house fa-fw"></i>
+                        </div>
+                        <div style="min-width: 100px; max-width: 150%; width: 20%">Home</div>
+                    </div>
+                </a>
+                
+                <a href="/about">
+                    <div class="item">
+                        <div style="min-width: 20px; max-width: 50px; width: 10%">
+                            <i class="fa-solid fa-id-card fa-fw"></i>
+                        </div>
+                        <div style="min-width: 100px; max-width: 150%; width: 20%">About</div>
+                    </div>
+                </a>
+                
+                <a href="/archives">
+                    <div class="item">
+                        <div style="min-width: 20px; max-width: 50px; width: 10%">
+                            <i class="fa-solid fa-box-archive fa-fw"></i>
+                        </div>
+                        <div style="min-width: 100px; max-width: 150%; width: 20%">Archives</div>
+                    </div>
+                </a>
+                
+                <a href="/categories">
+                    <div class="item">
+                        <div style="min-width: 20px; max-width: 50px; width: 10%">
+                            <i class="fa-solid fa-bookmark fa-fw"></i>
+                        </div>
+                        <div style="min-width: 100px; max-width: 150%; width: 20%">Categories</div>
+                    </div>
+                </a>
+                
+                <a href="/tags">
+                    <div class="item">
+                        <div style="min-width: 20px; max-width: 50px; width: 10%">
+                            <i class="fa-solid fa-tags fa-fw"></i>
+                        </div>
+                        <div style="min-width: 100px; max-width: 150%; width: 20%">Tags</div>
+                    </div>
+                </a>
+                
+            </div>
+        </transition>
+    </nav>
+</div>
+<transition name="fade">
+    <div id="menu-curtain" @click="showMenuItems = !showMenuItems" v-show="showMenuItems"></div>
+</transition>
+
+        <div id="main" :class="loading ? 'into-enter-from': 'into-enter-active'">
+            <div class="article">
+    <div>
+        <h1>NTC解读</h1>
+    </div>
+    <div class="info">
+        <span class="date">
+            <span class="icon">
+                <i class="fa-solid fa-calendar fa-fw"></i>
+            </span>
+            2025/3/8
+        </span>
+        
+        
+        <span class="tags">
+            <span class="icon">
+                <i class="fa-solid fa-tags fa-fw"></i>
+            </span>
+            
+            
+            <span class="tag">
+                
+                <a href="/tags/rendering/" style="color: #00bcd4">
+                    rendering
+                </a>
+            </span>
+            
+        </span>
+        
+    </div>
+    
+    <div class="content" v-pre>
+        <script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']]
+  }
+};
+</script>
+
+<script id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<p><strong>纹理压缩方法</strong></p>
+<ul>
+<li><strong>Block-based method：</strong>传统的纹理压缩方法，将整个纹理按照如4x4或8x8划分（Block），然后对每一个Block进行压缩。相关方法有：S3TC(D3D),  PVRTC(IOS), ETC(OpenGL), ASTC(ARM GPU&amp;Apple GPU)等。优点是这种分块思想契合GPU计算方式，缺点是压缩能力有限（压缩率与通道数限制）。</li>
+<li><strong>meta-compression：</strong>较新的纹理压缩方法，基本思路为提取纹理特征，并利用这些特征提高纹理的压缩率。但缺点是GPU不直接支持对这种纹理压缩的随机采样，需要先进行格式转换。</li>
+</ul>
+<p><strong>NTC</strong><br><img title="" src="img1.png" alt="" width="472" data-align="center"></p>
+<ul>
+<li><strong>Representation：</strong>整个texture set表示为[w,h,c]的tensor，无需为每个通道指定语义（即每个通道代表normal，还是diffuse color等），并为每个material单独训练一个网络。唯一的assumption是统一的w和和</li>
+<li><strong>Feature pyramid：</strong>用于采样Feature的结构，不同Feature level对应不同的mipmap等级</li>
+</ul>
+<img title="" src="img2.png" alt="" width="472" data-align="center">
+
+<pre><code>- **Grid：**每个Feature level包含两个Grid，G0存储高频特征，G1存储低频特征，可以理解为两个shape为[1,c,w,h]的tensor
+</code></pre>
+<p>**Simulated quantization:**训练过程中前大半部分会给Grid加上一个uniform noise来模拟quantization的情况（说法比较抽象），实际实现过程就是给相应Grid加上一个范围在$ [-\frac{Q_k}{2},\frac{Q_k}{2}] $的uniform noise，其中$ Q_k $和quantization相关的变量有对应关系如下：</p>
+<p>$$<br>Q_k &#x3D; \frac{1}{N_k},N_k &#x3D; 2^{B_k}<br>$$</p>
+<p>所以实际上变量只有$ B_k $，具体这些变量什么意思会在后面进行解释</p>
+<p>**Sampling and Concatenation:**这一步进行Feature的采样以及拼接，作为网络的输入</p>
+<ul>
+<li>**Feature interpolation:**我们假设现在要采样一个分辨率为1080x1080（LOD0），坐标在(256,256)的texel，我们首先通过上面的Table 1定位到Feature level 0，可以看到其G0为256x256, G1为128x128, 因此我们需要进行upsample。<ul>
+<li>对G0，我们进行learned interpolate（不知道为什么叫这个名字），即取包围目标位置周围的4个feature点，过程类似(256,256)&#x2F;(1080,1080)&#x3D;（0.237，0.237），（0.237，0.237）x（256，256）&#x3D; （60，60），所以取G0中坐标在（60，60），（60，61），（61，60），（61，61）的4个feature点（参照Fig4 流程图）</li>
+<li>对G1，我们直接对（0.237，0.237）这个位置在G1上进行bilinear interpolate，获得对应feature点</li>
+</ul>
+</li>
+<li>**Tiled positional encoding:**为了更好保存高频信息，拼接部分还需要目标texel的positional encoding，文章这部分没有讲的很详细，通过其他人的代码复现大致的流程如下：<ul>
+<li>假如我们需要编码坐标（250，250），那么我们首先将坐标映射的8x8的tiling中，即（250%8，250%8） &#x3D; （2,2）,然后我们有一个encoding对应的表，大小为（6x8），以坐标值作为index取对应的列就是获得一个6+6的向量就是这个位置对应的positional encoding，下图清楚的展示了这个过程<img title="" src="img3.png" alt="" width="472" data-align="center"></li>
+<li>这个encoding表的生成利用了三角循环函数:$ tri(x) &#x3D; 2 \times ((x-offset)%2-1)-1 $，即Fig4中所展示的这个样子   <img title="" src="img4.png" alt="" width="472" data-align="center"></li>
+<li>通过调整输入序列x的频率与offset就能获得如上不同的采样序列</li>
+<li>上面的6x8的序列即通过将arange(0,8)的序列分别乘以$ 2^{octave} $,从而获得不同频率的输入，octave&#x3D;{0，1，2}，而对于每个octave，我们用offset&#x3D;{0,0.5}分别输入tri(x)来获得一条编码序列，同时排除octave&#x3D;0，offset&#x3D;0.5的这条序列，并在最后添加一条全为0的序列，至此我们获得了6条长度为8的序列，构成encoding表。</li>
+<li>最后再拼接一个normalized的LOD值，获得我们的完整输入：4 feature point(G0)+1 feature point(G1) + 12 （positional encoding）+ 1（normalized LOD）<br><strong>Network</strong><br>- 网络相对比较简单，就是一个包含两个维度为64的hidden layer的MLP，最后一层的输出没有激活函数，其他3层使用其定义的叫hardGELU的函数   <img title="" src="img5.png" alt="" width="472" data-align="center">
+**Training & inference**
+    - 训练使用gradient descent和Adam，loss函数结合L2和1-SSIM。对于loss函数文章并没有给出一个绝对的答案，loss影响color fidelity和高频信息之间的权衡，可以自行选择。训练使用8 batch，大小为256x256的texel crop，每个batch使用同一个LOD，每次95%的概率从特定概率采样，5%概率从mip level chain均匀采样</li>
+</ul>
+</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">def sample_lod(lod_list, p=0.05):</span><br><span class="line">    # Generate the first random uniform number</span><br><span class="line">    random_number = np.random.rand()</span><br><span class="line"></span><br><span class="line">    if random_number &lt;= p:</span><br><span class="line">        # Pick a number uniformly from the list</span><br><span class="line">        return np.random.choice(lod_list)</span><br><span class="line">    else:</span><br><span class="line">        # Generate another uniform random number</span><br><span class="line">        x = np.random.rand()</span><br><span class="line">        # Calculate floor(-log_4(x))</span><br><span class="line">        result = np.floor(-np.log(x) / np.log(4))</span><br><span class="line">        return result</span><br></pre></td></tr></table></figure>
+
+<pre><code>- 对于feature level中的各个grid使用初始liearning rate0.01，对于mlp network则为0.005，并且使用cosine annealing使二者最后均趋于0
+- **Filter：**推理完成后会获得指定的texel块，但是训练过程会对离散的单个像素点进行过拟合，而对于像素点之间的部分以及mip level之间的部分可能无法很好拟合，因此文中不适用传统的gpu texture filter（trilinear）而是通过给目标坐标（u，v）在x和y方向上添加噪声，再使用最近邻准则挑选像素作为最终的采样值。这种filter方法会产生噪声，但是现有的去噪后处理能够处理。
+</code></pre>
+<ul>
+<li><strong>Evaluation</strong><ul>
+<li><strong>Storage</strong>  <img title="" src="img6.png" alt="" width="472" data-align="center"></li>
+<li><strong>Training Speed</strong>  <img title="" src="img7.png" alt="" width="472" data-align="center"></li>
+<li><strong>Decompression Speed</strong>  <img title="" src="img8.png" alt="" width="472" data-align="center">
+  **Results in Table 4 indicate that** rendering with NTC **via stochastic filtering (see Section 5.3) **costs between 1.15 ms and 1.92 ms on a NVIDIA RTX 4090**, while the **cost decreases to 0.49 ms with traditional trilinear filtered BC7 textures**. The performance is similar for all materials in our evaluation set, and independent of the output channel count, ranging from three to twelve. We also implemented **trilinear filtering for NTC **by decompressing and filtering together eight texels and observed an **8× slowdown**.</li>
+</ul>
+</li>
+<li><strong>Ristrictions</strong><ul>
+<li><strong>Failure cases</strong>  <img title="" src="img9.png" alt="" width="472" data-align="center"></li>
+<li>方法要求各个通道之间有严格的对齐，否则会出现影响所有texture的artifact</li>
+<li>方法要求所有的纹理大小一致，但artist可能对于视觉效果不突出的纹理使用更低的分辨率</li>
+<li>对于近处高分辨率纹理能够获得比传统压缩算法更多的细节（更多的mipmap level），但是对于远处的景物这一优势变得不再明显</li>
+<li>方法对于多通道材质（多张纹理贴图）有更好的压缩效果（相同纹理质量更低的存储占用），但是对于简单材质（仅有rgb贴图）则几乎没有什么优势</li>
+<li>每次解压纹理需要使用所有的通道，但对于一些仅使用个别纹理的pass，这种方法或许不如传统方法高效</li>
+<li>stochastic filter会增加帧重建的负担，文章提出有可能直接在latent representation上做filter</li>
+<li>无法利用硬件的anistropic filtering（各项异性采样），软件实现难以做到实时</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li><strong>MMA acceleration</strong><ul>
+<li>一个比较有意思的地方是cuda中的shared_memory在ray-tracing shaders中并不能使用，原先可以将网络的输入（即到concatentate出来的部分）写入shared mem然后load到register再用tensor core调用相应intrinsic计算，但这里在图形管线中做不到。于是作者修改了D3D的编译器，也就是直接在给NVVM的IR中调用相应指令。同时文章指出vulkan的扩展NV_cooperative_matrix extension支持直接访问每个simd lane的matrix元素，KHR_shader_subgroup extension能够执行simd wide shuffle，并且PTX ISA中给出了每个simd lane和矩阵行列的对应关系。（算是给出了一个在vulkan中调用tensor core的思路吧）</li>
+</ul>
+</li>
+</ul>
+
+    </div>
+    
+    
+    
+    
+    
+    
+    
+</div>
+
+            <footer id="footer">
+    <div id="footer-wrap">
+        <div>
+            &copy;
+            2024 - 2025 jicong&#39;s blog
+            <span id="footer-icon">
+                <i class="fa-solid fa-font-awesome fa-fw"></i>
+            </span>
+            &commat;jicong
+        </div>
+        <div>
+            Based on the <a target="_blank" rel="noopener" href="https://hexo.io">Hexo Engine</a> &amp;
+            <a target="_blank" rel="noopener" href="https://github.com/theme-particlex/hexo-theme-particlex">ParticleX Theme</a>
+        </div>
+        
+    </div>
+</footer>
+
+        </div>
+        
+    </div>
+    <script src="/js/main.js"></script>
+    
+    
+
+
+
+
+    
+</body>
+</html>
