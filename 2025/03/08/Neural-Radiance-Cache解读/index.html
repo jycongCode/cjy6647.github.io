@@ -204,7 +204,8 @@ MathJax = {
 </blockquote>
 <p>文章还介绍了许多GI相关的方法，如预计算，动态光源，或者path guiding等（这部分主要是提高采样效率，并且因为利用历史采样结果，不太适合动态场景，主要用在offline render里面）</p>
 <p><strong>NRC：</strong>文章通过链式更新（类似Q-learning，这个类似rl的做法比较有趣，还有一些细节处理也和rl中的做法比较像）实现在线更新网络，从而适应动态场景，并且用fully fused network获得极致的性能</p>
-<h4 id="Overview"><a href="#Overview" class="headerlink" title="Overview"></a>Overview</h4><p><img src="https://cdn.nlark.com/yuque/0/2025/png/29160101/1741480834005-0394f7ec-3018-47f0-a30f-b4532c9be8cf.png"></p>
+<h4 id="Overview"><a href="#Overview" class="headerlink" title="Overview"></a>Overview</h4><img title="" src="https://cdn.nlark.com/yuque/0/2025/png/29160101/1741480834005-0394f7ec-3018-47f0-a30f-b4532c9be8cf.png" alt="" width="472" data-align="center">
+
 <p>整体是path tracing的框架，分为render和training两个部分，render使用short-path（参考x0-x1-x2，也就是1-bounce），主要通过$ \hat{L_s} $获取x1的间接光照，剩下部分其实可以自由搭配，文章中使用LightBVH+SS ReSTIR计算直接光照+MIS。training则在render的基础上再多走两步（参考y0-y1-y2-y4）,然后用链式更新的方式进行在在线网络更新。</p>
 <p>链式更新：</p>
 <p>以y1点为例：</p>
