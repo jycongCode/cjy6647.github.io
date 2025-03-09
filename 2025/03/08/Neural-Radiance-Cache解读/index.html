@@ -1,0 +1,294 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Neural Radiance Cache解读 | jicong&#39;s blog</title>
+    <meta name="author" content="jicong" />
+    <meta name="description" content="" />
+    <meta name="keywords" content="" />
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"
+    />
+    <link rel="icon" href="/images/avatar.jpg" />
+    <link rel="preconnect" href="https://s4.zstatic.net" />
+<script src="https://s4.zstatic.net/ajax/libs/vue/3.3.7/vue.global.prod.min.js"></script>
+<link rel="stylesheet" href="https://s4.zstatic.net/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+<link rel="preconnect" href="https://fonts.googleapis.cn" />
+<link rel="preconnect" href="https://fonts.gstatic.cn" crossorigin />
+<link
+    rel="stylesheet"
+    href="https://fonts.googleapis.cn/css2?family=Fira+Code:wght@400;500;600;700&family=Lexend:wght@400;500;600;700;800;900&family=Noto+Sans+SC:wght@400;500;600;700;800;900&display=swap"
+/>
+<script> const mixins = {}; </script>
+
+<script src="https://polyfill.alicdn.com/v3/polyfill.min.js?features=default"></script>
+
+
+<script src="https://s4.zstatic.net/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://s4.zstatic.net/ajax/libs/highlightjs-line-numbers.js/2.8.0/highlightjs-line-numbers.min.js"></script>
+<link
+    rel="stylesheet"
+    href="https://s4.zstatic.net/ajax/libs/highlight.js/11.9.0/styles/github.min.css"
+/>
+<script src="/js/lib/highlight.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/css/main.css" />
+
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><meta name="generator" content="Hexo 7.3.0"></head>
+<body>
+    <div id="layout">
+        <transition name="fade">
+            <div id="loading" v-show="loading">
+                <div id="loading-circle">
+                    <h2>LOADING</h2>
+                    <p>加载过慢请开启缓存 浏览器默认开启</p>
+                    <img src="/images/loading.gif" />
+                </div>
+            </div>
+        </transition>
+        <div id="menu" :class="{ hidden: hiddenMenu, 'menu-color': menuColor}">
+    <nav id="desktop-menu">
+        <a class="title" href="/">
+            <span>JICONG&#39;S BLOG</span>
+        </a>
+        
+        <a href="/">
+            <i class="fa-solid fa-house fa-fw"></i>
+            <span>&ensp;Home</span>
+        </a>
+        
+        <a href="/about">
+            <i class="fa-solid fa-id-card fa-fw"></i>
+            <span>&ensp;About</span>
+        </a>
+        
+        <a href="/archives">
+            <i class="fa-solid fa-box-archive fa-fw"></i>
+            <span>&ensp;Archives</span>
+        </a>
+        
+        <a href="/categories">
+            <i class="fa-solid fa-bookmark fa-fw"></i>
+            <span>&ensp;Categories</span>
+        </a>
+        
+        <a href="/tags">
+            <i class="fa-solid fa-tags fa-fw"></i>
+            <span>&ensp;Tags</span>
+        </a>
+        
+    </nav>
+    <nav id="mobile-menu">
+        <div class="title" @click="showMenuItems = !showMenuItems">
+            <i class="fa-solid fa-bars fa-fw"></i>
+            <span>&emsp;JICONG&#39;S BLOG</span>
+        </div>
+        <transition name="slide">
+            <div class="items" v-show="showMenuItems">
+                
+                <a href="/">
+                    <div class="item">
+                        <div style="min-width: 20px; max-width: 50px; width: 10%">
+                            <i class="fa-solid fa-house fa-fw"></i>
+                        </div>
+                        <div style="min-width: 100px; max-width: 150%; width: 20%">Home</div>
+                    </div>
+                </a>
+                
+                <a href="/about">
+                    <div class="item">
+                        <div style="min-width: 20px; max-width: 50px; width: 10%">
+                            <i class="fa-solid fa-id-card fa-fw"></i>
+                        </div>
+                        <div style="min-width: 100px; max-width: 150%; width: 20%">About</div>
+                    </div>
+                </a>
+                
+                <a href="/archives">
+                    <div class="item">
+                        <div style="min-width: 20px; max-width: 50px; width: 10%">
+                            <i class="fa-solid fa-box-archive fa-fw"></i>
+                        </div>
+                        <div style="min-width: 100px; max-width: 150%; width: 20%">Archives</div>
+                    </div>
+                </a>
+                
+                <a href="/categories">
+                    <div class="item">
+                        <div style="min-width: 20px; max-width: 50px; width: 10%">
+                            <i class="fa-solid fa-bookmark fa-fw"></i>
+                        </div>
+                        <div style="min-width: 100px; max-width: 150%; width: 20%">Categories</div>
+                    </div>
+                </a>
+                
+                <a href="/tags">
+                    <div class="item">
+                        <div style="min-width: 20px; max-width: 50px; width: 10%">
+                            <i class="fa-solid fa-tags fa-fw"></i>
+                        </div>
+                        <div style="min-width: 100px; max-width: 150%; width: 20%">Tags</div>
+                    </div>
+                </a>
+                
+            </div>
+        </transition>
+    </nav>
+</div>
+<transition name="fade">
+    <div id="menu-curtain" @click="showMenuItems = !showMenuItems" v-show="showMenuItems"></div>
+</transition>
+
+        <div id="main" :class="loading ? 'into-enter-from': 'into-enter-active'">
+            <div class="article">
+    <div>
+        <h1>Neural Radiance Cache解读</h1>
+    </div>
+    <div class="info">
+        <span class="date">
+            <span class="icon">
+                <i class="fa-solid fa-calendar fa-fw"></i>
+            </span>
+            2025/3/8
+        </span>
+        
+        
+        <span class="tags">
+            <span class="icon">
+                <i class="fa-solid fa-tags fa-fw"></i>
+            </span>
+            
+            
+            <span class="tag">
+                
+                <a href="/tags/rendering/" style="color: #00bcd4">
+                    rendering
+                </a>
+            </span>
+            
+        </span>
+        
+    </div>
+    
+    <div class="content" v-pre>
+        <script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']]
+  }
+};
+</script>
+
+<script id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+
+<h4 id="Radiance-caching-基本思想为存储空间中某个位置的radiance，记为-L-x-omega-i-来模拟GI的效果，也是现在引擎中常用的GI方法。存储方式也多种多样，用3d-texture，SH（球谐函数）等。该文章的方法基本思想也基于此，即用neural-network来存储radiance-cache（此想法并非文章首次提出）"><a href="#Radiance-caching-基本思想为存储空间中某个位置的radiance，记为-L-x-omega-i-来模拟GI的效果，也是现在引擎中常用的GI方法。存储方式也多种多样，用3d-texture，SH（球谐函数）等。该文章的方法基本思想也基于此，即用neural-network来存储radiance-cache（此想法并非文章首次提出）" class="headerlink" title="Radiance caching: 基本思想为存储空间中某个位置的radiance，记为$ L(x,\omega_i) $来模拟GI的效果，也是现在引擎中常用的GI方法。存储方式也多种多样，用3d texture，SH（球谐函数）等。该文章的方法基本思想也基于此，即用neural network来存储radiance cache（此想法并非文章首次提出）"></a>Radiance caching: <strong>基本思想为存储空间中某个位置的radiance，记为$ L(x,\omega_i) $来模拟GI的效果，也是现在引擎中常用的GI方法。存储方式也多种多样，用3d texture，SH（球谐函数）等。该文章的方法基本思想也基于此，即用neural network来存储radiance cache（此想法并非文章首次提出）</strong></h4><blockquote>
+<p>neural radiance最早来自Ren et al的“Global Illumination with Radiance Regression Functions”</p>
+</blockquote>
+<p>文章还介绍了许多GI相关的方法，如预计算，动态光源，或者path guiding等（这部分主要是提高采样效率，并且因为利用历史采样结果，不太适合动态场景，主要用在offline render里面）</p>
+<p><strong>NRC：</strong>文章通过链式更新（类似Q-learning，这个类似rl的做法比较有趣，还有一些细节处理也和rl中的做法比较像）实现在线更新网络，从而适应动态场景，并且用fully fused network获得极致的性能</p>
+<h4 id="Overview"><a href="#Overview" class="headerlink" title="Overview"></a>Overview</h4><p><img src="https://cdn.nlark.com/yuque/0/2025/png/29160101/1741480834005-0394f7ec-3018-47f0-a30f-b4532c9be8cf.png"></p>
+<p>整体是path tracing的框架，分为render和training两个部分，render使用short-path（参考x0-x1-x2，也就是1-bounce），主要通过$ \hat{L_s} $获取x1的间接光照，剩下部分其实可以自由搭配，文章中使用LightBVH+SS ReSTIR计算直接光照+MIS。training则在render的基础上再多走两步（参考y0-y1-y2-y4）,然后用链式更新的方式进行在在线网络更新。</p>
+<p>链式更新：</p>
+<p>以y1点为例：</p>
+<p>$$<br> \hat{L_{y1}’} &#x3D; (\hat{L_{y2}(\omega_i)}*w_1 &#x2F; p_1 + L_{direct} * w_2&#x2F;p_2) * f(\omega,\omega_i)<br>$$</p>
+<pre><code>- 优势：相比1-sample采样，这种用neural network存储的方式噪声更低，虽然会引入bias。并且这种链式更新模式实际存储的是infinite bounce。
+- 劣势：Training suffix的最后一个结点可能从未更新过，引入明显的误差，导致画面出现抖动。以及这种在线模式的拟合和相机的移动强相关，而对于相机没有频繁出现的位置，网络无法进行有效的更新，使得网络获得的场景信息不完整。
+</code></pre>
+<h4 id="Temporally-Stable-Cache-Queries"><a href="#Temporally-Stable-Cache-Queries" class="headerlink" title="Temporally Stable Cache Queries"></a>Temporally Stable Cache Queries</h4><p>因为场景一直在动态变化，并且让网络快速收敛，会使用较大的learning rate，这就导致模型参数的变化会非常剧烈，为了模型访问的稳定，文章在进行render时不直接访问现在的模型参数，而是保留一个EMA的副本</p>
+<p><img src="https://cdn.nlark.com/yuque/0/2025/png/29160101/1741482726199-514ad555-6991-4a1a-b1b3-1a8e1577e63c.png"></p>
+<blockquote>
+<p>这种分离训练和查询的方式在rl也经常使用，被叫作soft update</p>
+</blockquote>
+<h4 id="Path-Termination"><a href="#Path-Termination" class="headerlink" title="Path Termination"></a>Path Termination</h4><p>path的结束条件使用一个heuristic，文章中叫area-spread of path vertices</p>
+<p><img src="https://cdn.nlark.com/yuque/0/2025/png/29160101/1741483310664-12aae32a-4f2b-43c3-8b02-c27912233f78.png"></p>
+<p><img src="https://cdn.nlark.com/yuque/0/2025/png/29160101/1741483458729-ea5e5bfb-63f7-402a-bb60-ad37dc37eb2f.png"></p>
+<p>结束条件为$ a(x_1 \cdots x_n) &gt; c \cdot a_0 $,大致意思是采样范围（大范围的间接光照）足够大时能够模糊模型在小范围的拟合误差</p>
+<h4 id="Amortization-in-a-Real-time-Path-Tracer"><a href="#Amortization-in-a-Real-time-Path-Tracer" class="headerlink" title="Amortization in a Real-time Path Tracer"></a>Amortization in a Real-time Path Tracer</h4><p>我们还需要决定哪些path用于training，为了达到60fps的标准，每次16.67ms的预算，所以帧能够进行的训练量几乎是固定的。为了让training尽可能均匀，将viewport分为许多tile，并随机从每个tile中选择一个path进行延长来获得训练用的record（$ \hat{L} \text{ 和 } \hat{L}’ $）.收集的所有training record会分为s个batch，每个batch里l条record，每次update取一个batch，文中给出配置为s&#x3D;4，l&#x3D;16384。为了维持稳定的更新（s和l恒定），tile的大小根据每次产生的training record数量动态调整。</p>
+<h4 id="Input-Encoding"><a href="#Input-Encoding" class="headerlink" title="Input Encoding"></a>Input Encoding</h4><p>realtime的限制导致不能使用很复杂的网络，为了拟合更复杂的关系，需要先对输入feature进行映射（获取feature）</p>
+<p>padding到64 dimensions之后输入之后的mlp网络</p>
+<h4 id="FULLY-FUSED-NEURAL-NETWORKS"><a href="#FULLY-FUSED-NEURAL-NETWORKS" class="headerlink" title="FULLY FUSED NEURAL NETWORKS"></a>FULLY FUSED NEURAL NETWORKS</h4><p>为了做到实时，文章<strong>使用一个pass来完成整个网络的推理</strong>（fully fused）。因为mlp实际上就是矩阵乘法，所以文章针对这部分进行优化。</p>
+<p><img src="https://cdn.nlark.com/yuque/0/2025/png/29160101/1741486474349-6803ec45-6937-4922-87f5-ca3f41f19758.png"></p>
+<p>这部分图中的表述会比文字清楚很多，所以尽可能参考上图或者原文，基本思想就是减少global memory traffic，即参数到core仅load一次，通过调整thread block的大小使shared memory能够容纳中间结果（H），并且将参数保存在register中复用从而实现矩阵乘法。对于training阶段因为需要更新参数，所以必然会有额外的global memory访问。并且为了计算整个参数矩阵的gradient，文章使用cutlass来做矩阵乘法。而多余的计算与global memory traffic会让训练过程比推理慢4-5x。</p>
+<h4 id="Other-Details"><a href="#Other-Details" class="headerlink" title="Other Details"></a>Other Details</h4><ul>
+<li>**Achitecture: **7层fully connected layer，hidden layer为64 dimensions，输出rgb channels</li>
+<li><strong>Reflectance factorization：</strong>就是在输入中加上diffuse reflectance和specular reflectance</li>
+<li><strong>High-performance primitives for encoding：</strong>因为one-blob encoding和frequency encoding计算量消耗太大，所以采用Quadratic kernel替换Guassian，sine function替换triangle wave</li>
+<li>**Relative loss: **训练用的loss</li>
+</ul>
+<p><img src="https://cdn.nlark.com/yuque/0/2025/png/29160101/1741488714797-3f26ce86-faa8-4c87-a29b-4e773c6684b6.png"></p>
+<pre><code>- **Optimizer：**Adam
+</code></pre>
+<h4 id="Evaluation"><a href="#Evaluation" class="headerlink" title="Evaluation"></a>Evaluation</h4><p><img src="https://cdn.nlark.com/yuque/0/2025/png/29160101/1741489293229-8305f3da-59a4-4644-a957-345c924e5a00.png"></p>
+<p>相比单纯的PT+RESTIR的speed up还是很明显的，更多具体的效果可以参考原论文与supplementary video</p>
+<ul>
+<li><strong>limitations</strong><ul>
+<li>尖锐变化的细节把握不好（不作为网络输入时，如接触阴影与焦散）</li>
+<li>轻微的条纹artifact</li>
+</ul>
+</li>
+<li><strong>Comparision with DDGI</strong><ul>
+<li>DDGI为了保证性能和低噪声，在第一个diffuse interaction结束path，但会缺少AO造成可见的误差，而额外的AO pass会损失一定的性能。</li>
+<li>NRC在一定性能和噪声牺牲下保证最好的视觉效果（无视material统一的path termination heuristic）</li>
+</ul>
+</li>
+</ul>
+
+    </div>
+    
+    
+    
+    
+    
+    
+    
+</div>
+
+            <footer id="footer">
+    <div id="footer-wrap">
+        <div>
+            &copy;
+            2024 - 2025 jicong&#39;s blog
+            <span id="footer-icon">
+                <i class="fa-solid fa-font-awesome fa-fw"></i>
+            </span>
+            &commat;jicong
+        </div>
+        <div>
+            Based on the <a target="_blank" rel="noopener" href="https://hexo.io">Hexo Engine</a> &amp;
+            <a target="_blank" rel="noopener" href="https://github.com/theme-particlex/hexo-theme-particlex">ParticleX Theme</a>
+        </div>
+        
+    </div>
+</footer>
+
+        </div>
+        
+    </div>
+    <script src="/js/main.js"></script>
+    
+    
+
+
+
+
+    
+</body>
+</html>
